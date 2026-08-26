@@ -1,15 +1,3 @@
-# allislet
+# Allislet
 
-To install dependencies:
-
-```bash
-bun install
-```
-
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.3.14. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+Allislet is a preact wrapper made specifically for bookmarklets. I plan to add 100s of features in the future but its still in early development and is not production ready and I wouldn't recommend using it until its status is at least alpha.
