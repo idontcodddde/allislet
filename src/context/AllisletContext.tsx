@@ -1,60 +1,65 @@
-import { createContext, ComponentChildren } from 'preact';
-import { useContext } from 'preact/hooks';
-import type { AllisletConfig } from '../types';
-import { EventBus } from '../core/EventBus';
-import { PageExecutor } from '../core/PageExecutor';
-import { GlobalStorage } from '../core/GlobalStorage';
-import { AntiDetect } from '../core/AntiDetect';
+import { createContext, ComponentChildren } from "preact";
+import { useContext, useState, useRef, useEffect } from "preact/hooks";
+import { MacroRecorder } from "../macro/MacroRecorder";
+import { EventBus, eventBus } from "../core/EventBus";
+import { HotkeyManager } from "../features/hotkeys";
+import { AllisletConfig } from "../config";
 
-export interface AllisletContextValue {
-    config: AllisletConfig;
-    eventBus: EventBus;
-    pageExec: PageExecutor;
-    storage: GlobalStorage;
-    antiDetect: AntiDetect;
+interface AllisletContextType {
+  config: AllisletConfig;
+  recorder: MacroRecorder;
+  bus: EventBus;
+  activeTab: string;
+  setActiveTab: (tabId: string) => void;
+  isCollapsed: boolean;
+  setIsCollapsed: (collapsed: boolean | ((prev: boolean) => boolean)) => void;
 }
 
-const AllisletContext = createContext<AllisletContextValue | null>(null);
+const AllisletContext = createContext<AllisletContextType | null>(null);
 
-export interface AllisletProviderProps {
-    config: AllisletConfig;
-    eventBus: EventBus;
-    pageExec: PageExecutor;
-    storage: GlobalStorage;
-    antiDetect: AntiDetect;
-    children: ComponentChildren;
+interface AllisletProviderProps {
+  config: AllisletConfig;
+  children: ComponentChildren;
 }
 
-export function AllisletProvider({
-    config,
-    eventBus,
-    pageExec,
-    storage,
-    antiDetect,
-    children,
-}: AllisletProviderProps) {
-    const value: AllisletContextValue = {
-        config,
-        eventBus,
-        pageExec,
-        storage,
-        antiDetect,
+export function AllisletProvider({ config, children }: AllisletProviderProps) {
+  const recorderRef = useRef(new MacroRecorder());
+  const busRef = useRef(eventBus);
+  const [activeTab, setActiveTab] = useState(config.activeTabs?.[0] || "macro-recorder");
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (!config.hotkeys || config.hotkeys.length === 0) return;
+
+    const manager = new HotkeyManager(busRef.current, config.hotkeys);
+    manager.start();
+
+    return () => {
+      manager.stop();
     };
+  }, [config.hotkeys]);
 
-    return (
-        <AllisletContext.Provider value={value}>
-            {children}
-        </AllisletContext.Provider>
-    );
+  return (
+    <AllisletContext.Provider
+      value={{
+        config,
+        recorder: recorderRef.current,
+        bus: busRef.current,
+        activeTab,
+        setActiveTab,
+        isCollapsed,
+        setIsCollapsed,
+      }}
+    >
+      {children}
+    </AllisletContext.Provider>
+  );
 }
 
-/**
- * Universal hook to access Allislet Framework services inside any UI component or custom tab.
- */
-export function useAllislet(): AllisletContextValue {
-    const ctx = useContext(AllisletContext);
-    if (!ctx) {
-        throw new Error('[Allislet] useAllislet() must be used within an <AllisletProvider />');
-    }
-    return ctx;
+export function useAllislet() {
+  const context = useContext(AllisletContext);
+  if (!context) {
+    throw new Error("useAllislet must be used within an AllisletProvider");
+  }
+  return context;
 }
