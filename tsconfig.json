@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "strict": true,
+    "skipLibCheck": true,
+    "types": ["bun"],
+    "paths": {
+      "allislet": ["./src/index.ts"],
+      "@config": ["./allislet.config.ts"]
+    }
+  },
+  "include": ["src/**/*", "allislet.config.ts", "vite.config.ts"]
+}
