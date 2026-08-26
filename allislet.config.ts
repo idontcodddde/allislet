@@ -30,8 +30,7 @@ export default defineConfig({
         "sidebar",
     ],
     hotkeys: [
-        { combo: "Alt+Shift+Z", action: "toggle-ui" },
-        { combo: "Ctrl+K", action: "open-command-palette" },
+        { combo: "Alt+K", action: "ui:open-command-palette" },
     ],
     onMount({ eventBus, pageExec }) {
         console.log("[Allislet] Framework engine initialized!");
