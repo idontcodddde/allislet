@@ -1,292 +1,148 @@
-export type MacroActionType = "click" | "input" | "scroll";
+import { MacroAction, MacroActionType } from "./types";
+import { getUniqueSelectorFromPath, queryCrossBoundaries } from "./domUtils";
 
-export interface MacroAction {
-    type: MacroActionType;
-    selector: string;
-    timestamp: number;
-    delay: number;
-    value?: string;
-    scrollX?: number;
-    scrollY?: number;
-}
-
-export interface PlayOptions {
-    speed?: number; // Speed multiplier (e.g., 1 = 1x, 2 = 2x, 0.5 = 0.5x)
-    onStep?: (action: MacroAction, index: number) => void;
-}
-
-/**
- * Traverses both light DOM and open Shadow DOM trees to locate elements.
- */
-function querySelectorDeep(
-    selector: string,
-    root: ParentNode = document,
-): Element | null {
-    const found = root.querySelector(selector);
-    if (found) return found;
-
-    const elements = root.querySelectorAll("*");
-    for (let i = 0; i < elements.length; i++) {
-        const shadow = elements[i].shadowRoot;
-        if (shadow) {
-            const innerFound = querySelectorDeep(selector, shadow);
-            if (innerFound) return innerFound;
-        }
-    }
-    return null;
-}
-
-/**
- * Safely extracts event targets across shadow boundaries with explicit array typing.
- */
-function getEventPath(e: Event): EventTarget[] {
-    if (typeof e.composedPath === "function") {
-        return e.composedPath() as EventTarget[];
-    }
-    const target = e.target;
-    return target ? [target] : [];
-}
-
-/**
- * Builds a CSS selector path, bypassing host bookmarklet containers and shadow roots.
- */
-function getUniqueSelectorFromPath(
-    composedPath: (EventTarget | null | undefined)[],
-): string {
-    const path: string[] = [];
-
-    for (const node of composedPath) {
-        if (!(node instanceof Element)) continue;
-        if (node === document.body || node === document.documentElement) break;
-
-        // Ignore bookmarklet host wrapper IDs so selectors don't collapse into #my-custom-bookmarklet
-        if (
-            node.id &&
-            node.id !== "my-custom-bookmarklet" &&
-            !node.id.startsWith("allislet")
-        ) {
-            path.unshift(`#${CSS.escape(node.id)}`);
-            break;
-        }
-
-        let selector = node.tagName.toLowerCase();
-
-        if (node.className && typeof node.className === "string") {
-            const classes = node.className
-                .trim()
-                .split(/\s+/)
-                .filter((c) => c && !c.startsWith("allislet"))
-                .map((c) => `.${CSS.escape(c)}`)
-                .join("");
-            if (classes) selector += classes;
-        }
-
-        const parentNode = node.parentElement;
-        if (parentNode) {
-            const currentTag = node.tagName;
-            const siblings = Array.from(parentNode.children).filter(
-                (child) => child.tagName === currentTag,
-            );
-            if (siblings.length > 1) {
-                const index = siblings.indexOf(node) + 1;
-                selector += `:nth-of-type(${index})`;
-            }
-        }
-
-        path.unshift(selector);
-    }
-
-    return path.join(" > ") || "element";
-}
+type Listener = (actions: MacroAction[]) => void;
 
 export class MacroRecorder {
-    private isRecording = false;
-    private isPlaying = false;
-    private actions: MacroAction[] = [];
-    private startTime = 0;
-    private lastEventTime = 0;
-    private scrollTimeout: ReturnType<typeof setTimeout> | null = null;
+  private isRecording = false;
+  private actions: MacroAction[] = [];
+  private startTime = 0;
+  private lastEventTime = 0;
+  private subscribers: Set<Listener> = new Set();
+  private inputDebounceMap: Map<string, ReturnType<typeof setTimeout>> = new Map();
 
-    private boundOnClick: (e: MouseEvent) => void;
-    private boundOnInput: (e: Event) => void;
-    private boundOnScroll: (e: Event) => void;
+  private boundOnClick = this.handleClick.bind(this);
+  private boundOnInput = this.handleInput.bind(this);
 
-    constructor() {
-        this.boundOnClick = this.handleClick.bind(this);
-        this.boundOnInput = this.handleInput.bind(this);
-        this.boundOnScroll = this.handleScroll.bind(this);
+  public subscribe(fn: Listener): () => void {
+    this.subscribers.add(fn);
+    fn([...this.actions]);
+    return () => this.subscribers.delete(fn);
+  }
+
+  private notify(): void {
+    this.subscribers.forEach((cb) => cb([...this.actions]));
+  }
+
+  public start(): void {
+    if (this.isRecording) return;
+    this.isRecording = true;
+    this.actions = [];
+    this.startTime = Date.now();
+    this.lastEventTime = this.startTime;
+
+    window.addEventListener("click", this.boundOnClick, true);
+    window.addEventListener("input", this.boundOnInput, true);
+    this.notify();
+  }
+
+  public stop(): void {
+    if (!this.isRecording) return;
+    this.isRecording = false;
+
+    window.removeEventListener("click", this.boundOnClick, true);
+    window.removeEventListener("input", this.boundOnInput, true);
+    this.notify();
+  }
+
+  public clear(): void {
+    this.actions = [];
+    this.notify();
+  }
+
+  public getActions(): MacroAction[] {
+    return [...this.actions];
+  }
+
+  private recordAction(type: MacroActionType, selector: string, extra: Partial<MacroAction> = {}): void {
+    if (!selector) return;
+
+    const now = Date.now();
+    const delay = now - this.lastEventTime;
+    this.lastEventTime = now;
+
+    this.actions.push({
+      type,
+      selector,
+      timestamp: now - this.startTime,
+      delay,
+      ...extra,
+    });
+
+    this.notify();
+  }
+
+  private handleClick(e: MouseEvent): void {
+    if (!this.isRecording) return;
+
+    const path = e.composedPath();
+    const selector = getUniqueSelectorFromPath(path);
+    if (!selector) return;
+
+    this.recordAction("click", selector);
+  }
+
+  private handleInput(e: Event): void {
+    if (!this.isRecording) return;
+
+    const path = e.composedPath();
+    const selector = getUniqueSelectorFromPath(path);
+    if (!selector) return;
+
+    const target = (path[0] || e.target) as HTMLInputElement | HTMLTextAreaElement;
+    const value = target.value ?? "";
+
+    if (this.inputDebounceMap.has(selector)) {
+      clearTimeout(this.inputDebounceMap.get(selector)!);
     }
 
-    public start(): void {
-        if (this.isRecording) return;
-        this.isRecording = true;
-        this.actions = [];
-        this.startTime = Date.now();
-        this.lastEventTime = this.startTime;
+    this.inputDebounceMap.set(
+      selector,
+      setTimeout(() => {
+        const existingIdx = this.actions.findLastIndex(
+          (a) => a.type === "input" && a.selector === selector
+        );
 
-        window.addEventListener("click", this.boundOnClick, true);
-        window.addEventListener("input", this.boundOnInput, true);
-        window.addEventListener("scroll", this.boundOnScroll, true);
-    }
-
-    public stop(): MacroAction[] {
-        if (!this.isRecording) return [...this.actions];
-        this.isRecording = false;
-
-        window.removeEventListener("click", this.boundOnClick, true);
-        window.removeEventListener("input", this.boundOnInput, true);
-        window.removeEventListener("scroll", this.boundOnScroll, true);
-
-        if (this.scrollTimeout) clearTimeout(this.scrollTimeout);
-
-        return [...this.actions];
-    }
-
-    private recordAction(
-        type: MacroActionType,
-        composedPath: (EventTarget | null | undefined)[],
-        extra: Partial<MacroAction> = {},
-    ): void {
-        const now = Date.now();
-        const delay = now - this.lastEventTime;
-        this.lastEventTime = now;
-
-        const action: MacroAction = {
-            type,
-            selector: getUniqueSelectorFromPath(composedPath),
-            timestamp: now - this.startTime,
-            delay,
-            ...extra,
-        };
-
-        this.actions.push(action);
-    }
-
-    private handleClick(e: MouseEvent): void {
-        if (!this.isRecording) return;
-        const path = getEventPath(e);
-        if (path.length > 0) {
-            this.recordAction("click", path);
+        if (existingIdx !== -1 && Date.now() - this.startTime - this.actions[existingIdx].timestamp < 1500) {
+          this.actions[existingIdx].value = value;
+          this.notify();
+        } else {
+          this.recordAction("input", selector, { value });
         }
-    }
+        this.inputDebounceMap.delete(selector);
+      }, 300)
+    );
+  }
 
-    private handleInput(e: Event): void {
-        if (!this.isRecording) return;
-        const path = getEventPath(e);
-        const target = path[0] as Element | undefined;
+  public async play(actionsToPlay: MacroAction[] = this.actions): Promise<void> {
+    for (const action of actionsToPlay) {
+      await new Promise((res) => setTimeout(res, Math.min(action.delay, 1000)));
 
-        if (
-            target instanceof HTMLInputElement ||
-            target instanceof HTMLTextAreaElement ||
-            target instanceof HTMLSelectElement
-        ) {
-            this.recordAction("input", path, { value: target.value });
-        }
-    }
+      const el = queryCrossBoundaries(action.selector);
+      if (!el) continue;
 
-    private handleScroll(e: Event): void {
-        if (!this.isRecording) return;
+      if (action.type === "click") {
+        el.click();
+      } else if (action.type === "input" && (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) {
+        const nativeSetter =
+          Object.getOwnPropertyDescriptor(
+            window.HTMLInputElement.prototype,
+            "value"
+          )?.set ||
+          Object.getOwnPropertyDescriptor(
+            window.HTMLTextAreaElement.prototype,
+            "value"
+          )?.set;
 
-        if (this.scrollTimeout) clearTimeout(this.scrollTimeout);
-        this.scrollTimeout = setTimeout(() => {
-            const path = getEventPath(e);
-            const rawTarget = path[0];
-            const target = rawTarget === document || rawTarget === window
-                ? document.documentElement
-                : (rawTarget as Element);
-
-            if (target instanceof Element) {
-                this.recordAction("scroll", path, {
-                    scrollX: target === document.documentElement
-                        ? window.scrollX
-                        : target.scrollLeft,
-                    scrollY: target === document.documentElement
-                        ? window.scrollY
-                        : target.scrollTop,
-                });
-            }
-        }, 100);
-    }
-
-    public async play(
-        actions: MacroAction[],
-        options: PlayOptions = {},
-    ): Promise<void> {
-        if (this.isPlaying) return;
-        this.isPlaying = true;
-        const speed = options.speed && options.speed > 0 ? options.speed : 1;
-
-        for (let i = 0; i < actions.length; i++) {
-            if (!this.isPlaying) break;
-            const action = actions[i];
-
-            const scaledDelay = (action.delay || 0) / speed;
-            if (scaledDelay > 0) {
-                await new Promise((res) => setTimeout(res, scaledDelay));
-            }
-
-            // Query across shadow boundaries
-            const target = querySelectorDeep(action.selector);
-            if (!target) {
-                console.warn(
-                    `[MacroRecorder] Target not found: ${action.selector}`,
-                );
-                options.onStep?.(action, i);
-                continue;
-            }
-
-            if (action.type === "click") {
-                if (typeof (target as HTMLElement).click === "function") {
-                    (target as HTMLElement).click();
-                }
-                target.dispatchEvent(
-                    new MouseEvent("click", {
-                        bubbles: true,
-                        cancelable: true,
-                        composed: true,
-                        view: window,
-                    }),
-                );
-            } else if (action.type === "input") {
-                if (
-                    target instanceof HTMLInputElement ||
-                    target instanceof HTMLTextAreaElement ||
-                    target instanceof HTMLSelectElement
-                ) {
-                    target.value = action.value ?? "";
-                    target.dispatchEvent(
-                        new Event("input", { bubbles: true, composed: true }),
-                    );
-                    target.dispatchEvent(
-                        new Event("change", { bubbles: true, composed: true }),
-                    );
-                }
-            } else if (action.type === "scroll") {
-                if (
-                    target === document.documentElement ||
-                    target === document.body
-                ) {
-                    window.scrollTo({
-                        left: action.scrollX ?? 0,
-                        top: action.scrollY ?? 0,
-                        behavior: "smooth",
-                    });
-                } else {
-                    target.scrollTo({
-                        left: action.scrollX ?? 0,
-                        top: action.scrollY ?? 0,
-                        behavior: "smooth",
-                    });
-                }
-            }
-
-            options.onStep?.(action, i);
+        if (nativeSetter) {
+          nativeSetter.call(el, action.value ?? "");
+        } else {
+          el.value = action.value ?? "";
         }
 
-        this.isPlaying = false;
+        el.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true, composed: true }));
+      }
     }
-
-    public stopPlayback(): void {
-        this.isPlaying = false;
-    }
+  }
 }
