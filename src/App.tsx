@@ -1,7 +1,14 @@
 import { useAllislet } from "./context/AllisletContext";
 
+import { useEffect } from "preact/hooks";
+import { registerCommandPaletteUtil } from "./utils/commandPalette";
+
 export function App() {
   const { pageExec, eventBus } = useAllislet();
+  useEffect(() => {
+    const cleanup = registerCommandPaletteUtil();
+    return () => cleanup();
+  }, []);
 
   return (
     <div style={{ color: "#fff" }}>
