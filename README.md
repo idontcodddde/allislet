@@ -21,7 +21,7 @@ Allislet is an experimental Preact wrapper designed specifically for building br
 
 For full guides, API references, and architectural concepts, visit the primary documentation site:
 
-**[Read the Allislet Documentation](https://your-docusaurus-site.com)**
+**[Read the Allislet Documentation](https://docs-not-made-yet-itsmemestatusrememberlol.com)**
 
 ---
 
