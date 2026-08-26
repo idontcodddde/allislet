@@ -17,19 +17,74 @@ Allislet is an experimental Preact wrapper designed specifically for building br
 
 ---
 
-## Documentation
+## Configuration
+
+You can configure build options and shadow root parameters through an optional configuration file:
+
+```typescript
+// allislet.config.ts
+import { defineConfig } from 'allislet';
+
+export default defineConfig({
+  id: 'my-custom-bookmarklet',
+  name: 'DevTools Suite',
+  version: '1.0.0',
+  theme: {
+    mode: 'dark',
+    accentColor: '#74c7ec',
+    defaultDockPosition: 'right',
+  },
+  storage: {
+    namespace: 'my_app_v1',
+    crossDomainHubUrl: 'https://my-domain.com/storage-hub.html',
+    encryptLocalStorage: true,
+  },
+  features: {
+    patchFetch: true,
+    patchXHR: true,
+    interceptSockets: true,
+    autoExtractBearer: true,
+  },
+  activeTabs: [
+    'network-logger',
+    'websocket-manager',
+    'js-console',
+    'macro-studio',
+    'storage-explorer',
+    'dom-inspector',
+    'settings',
+    'analytics'
+  ],
+  hotkeys: [{
+      combo: 'Alt+Shift+Z',
+      action: 'toggle-ui'
+    },
+    {
+      combo: 'Ctrl+K',
+      action: 'open-command-palette'
+    },
+  ],
+  onMount({
+    eventBus,
+    pageExec
+  }) {
+    console.log('[Allislet] Framework engine initialized!');
+  },
+  onCleanup() {
+    console.log('[Allislet] Cleaned up runtime resources.');
+  },
+});
+```
+
+# Documentation
 
 For full guides, API references, and architectural concepts, visit the primary documentation site:
 
-**[Read the Allislet Documentation](https://your-docusaurus-site.com)**
+[Read the Allislet documentation](https://no-doc-site-its-meme-status-remember)
 
----
+# Example
 
-## Complete Example
-
-This example demonstrates setting up the Shadow DOM mount, wrapping the application inside the `AllisletProvider`, and constructing a full UI with the `AppShell` and custom views.
-
-```tsx
+```typescript
 import { render } from "preact";
 import { 
   AllisletProvider, 
@@ -39,13 +94,13 @@ import {
   SettingsView 
 } from "allislet";
 
-// 1. Define custom views or use pre-built components
+// First, define custom views or use pre-built components
 const views = [
   MacroView,
   SettingsView,
 ];
 
-// 2. Custom App implementation utilizing the state hook
+// Second, implement custom App utilizing the state hook
 function App() {
   const { activeTab, setActiveTab, isCollapsed, setIsCollapsed } = useAllislet();
 
@@ -55,7 +110,7 @@ function App() {
   );
 }
 
-// 3. Mount into an isolated Shadow DOM container
+// Third, mount into an isolated Shadow DOM container
 export function initBookmarklet() {
   const HOST_ID = "my-custom-bookmarklet";
   
@@ -79,3 +134,8 @@ export function initBookmarklet() {
 
 // Run the bookmarklet
 initBookmarklet();
+```
+
+# License
+
+MIT (check License file)
