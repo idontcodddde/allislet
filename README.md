@@ -53,7 +53,6 @@ export default defineConfig({
     'storage-explorer',
     'dom-inspector',
     'settings',
-    'analytics'
   ],
   hotkeys: [{
       combo: 'Alt+Shift+Z',
