@@ -1,4 +1,4 @@
-import { useState, useRef } from "preact/hooks";
+import { useState, useRef, useEffect } from "preact/hooks";
 import { MacroRecorder, MacroAction } from "allislet";
 import { Icon } from "../components/Icon";
 
@@ -22,6 +22,18 @@ export default function MacroView() {
     const [clickCount, setClickCount] = useState(0);
     const [inputValue, setInputValue] = useState("");
 
+    useEffect(() => {
+        const recorder = recorderRef.current;
+        // Subscribe to real-time action changes recorded by MacroRecorder
+        const unsubscribe = recorder.subscribe?.((updatedActions: MacroAction[]) => {
+            setActions(updatedActions);
+        });
+
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
+    }, []);
+
     const handleStartRecording = () => {
         setActions([]);
         setLogs([]);
@@ -42,10 +54,11 @@ export default function MacroView() {
 
         await recorderRef.current.play(actions, {
             speed,
-            onStep: (action, index) => {
+            onStep: (action: MacroAction, index: number) => {
+                const extraInfo = action.value ? ` ("${action.value}")` : "";
                 setLogs((prev) => [
                     ...prev,
-                    `[${index + 1}/${actions.length}] ${action.type.toUpperCase()} -> ${action.selector}`,
+                    `[${index + 1}/${actions.length}] ${action.type.toUpperCase()} -> ${action.selector}${extraInfo}`,
                 ]);
             },
         });
@@ -54,6 +67,7 @@ export default function MacroView() {
     };
 
     const handleClear = () => {
+        recorderRef.current.clear?.();
         setClickCount(0);
         setInputValue("");
         setActions([]);
@@ -197,6 +211,7 @@ export default function MacroView() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                     <label style={{ fontSize: "12px", color: "#b5bac1" }}>Text Input Target</label>
                     <input
+                        id="test-input-target"
                         type="text"
                         value={inputValue}
                         onInput={(e) => setInputValue((e.target as HTMLInputElement).value)}
@@ -216,6 +231,7 @@ export default function MacroView() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                     <label style={{ fontSize: "12px", color: "#b5bac1" }}>Button Click Target</label>
                     <button
+                        id="test-button-target"
                         onClick={() => setClickCount((c) => c + 1)}
                         style={{
                             backgroundColor: "#2b2d31",
@@ -234,7 +250,7 @@ export default function MacroView() {
                 </div>
             </div>
 
-            {/* Execution Log Output */}
+            {/* Recorded Steps Preview & Execution Log */}
             <div
                 style={{
                     flex: 1,
@@ -249,8 +265,20 @@ export default function MacroView() {
                     overflowY: "auto",
                 }}
             >
-                {logs.length === 0 ? (
-                    <span style={{ color: "#949ba4", fontFamily: "sans-serif" }}>No macro playback active...</span>
+                {logs.length === 0 && actions.length > 0 ? (
+                    <div>
+                        <div style={{ color: "#949ba4", marginBottom: "6px", fontFamily: "sans-serif" }}>
+                            Recorded Steps ({actions.length}):
+                        </div>
+                        {actions.map((act, i) => (
+                            <div key={i} style={{ color: "#8be9fd", marginBottom: "2px" }}>
+                                [{i + 1}/{actions.length}] {act.type.toUpperCase()} {"->"} {act.selector}{" "}
+                                {act.value ? `("${act.value}")` : ""}
+                            </div>
+                        ))}
+                    </div>
+                ) : logs.length === 0 ? (
+                    <span style={{ color: "#949ba4", fontFamily: "sans-serif" }}>No macro actions recorded or playing...</span>
                 ) : (
                     logs.map((log, i) => <div key={i}>{log}</div>)
                 )}
