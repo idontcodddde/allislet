@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "preact/hooks";
-import { MacroRecorder, MacroAction } from "allislet";
+import { useState, useRef } from "preact/hooks";
+import { MacroRecorder, MacroAction } from "../macro/MacroRecorder";
 import { Icon } from "../components/Icon";
 
 export const meta = {
@@ -18,21 +18,8 @@ export default function MacroView() {
     const [speed, setSpeed] = useState<number>(1);
     const [logs, setLogs] = useState<string[]>([]);
 
-    // Interactive target states for testing inside the view
     const [clickCount, setClickCount] = useState(0);
     const [inputValue, setInputValue] = useState("");
-
-    useEffect(() => {
-        const recorder = recorderRef.current;
-        // Subscribe to real-time action changes recorded by MacroRecorder
-        const unsubscribe = recorder.subscribe?.((updatedActions: MacroAction[]) => {
-            setActions(updatedActions);
-        });
-
-        return () => {
-            if (unsubscribe) unsubscribe();
-        };
-    }, []);
 
     const handleStartRecording = () => {
         setActions([]);
@@ -54,11 +41,10 @@ export default function MacroView() {
 
         await recorderRef.current.play(actions, {
             speed,
-            onStep: (action: MacroAction, index: number) => {
-                const extraInfo = action.value ? ` ("${action.value}")` : "";
+            onStep: (action, index) => {
                 setLogs((prev) => [
                     ...prev,
-                    `[${index + 1}/${actions.length}] ${action.type.toUpperCase()} -> ${action.selector}${extraInfo}`,
+                    `[${index + 1}/${actions.length}] ${action.type.toUpperCase()} -> ${action.selector}`,
                 ]);
             },
         });
@@ -67,7 +53,6 @@ export default function MacroView() {
     };
 
     const handleClear = () => {
-        recorderRef.current.clear?.();
         setClickCount(0);
         setInputValue("");
         setActions([]);
@@ -76,10 +61,9 @@ export default function MacroView() {
 
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px", height: "100%", overflowY: "auto" }}>
-            {/* Top Action Bar */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div data-macro-ignore="true" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <span style={{ fontWeight: 600, fontSize: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <Icon icon="ph:video-camera-bold" size="18px" /> DOM Interaction Macro
+                    <Icon icon="ph:video-camera-bold" size="18px" /> DOM Interaction Macro (doesnt work when clicking stuff on the bookmarklet)
                 </span>
                 <button
                     onClick={handleClear}
@@ -102,8 +86,7 @@ export default function MacroView() {
                 </button>
             </div>
 
-            {/* Controls Bar */}
-            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <div data-macro-ignore="true" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                 {!isRecording ? (
                     <button
                         onClick={handleStartRecording}
@@ -192,66 +175,8 @@ export default function MacroView() {
                 </select>
             </div>
 
-            {/* Interactive Sandbox Section */}
             <div
-                style={{
-                    backgroundColor: "#111214",
-                    border: "1px solid #2b2d31",
-                    borderRadius: "6px",
-                    padding: "12px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "10px",
-                }}
-            >
-                <span style={{ fontSize: "11px", fontWeight: 700, color: "#949ba4", textTransform: "uppercase" }}>
-                    Test Target Bench
-                </span>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <label style={{ fontSize: "12px", color: "#b5bac1" }}>Text Input Target</label>
-                    <input
-                        id="test-input-target"
-                        type="text"
-                        value={inputValue}
-                        onInput={(e) => setInputValue((e.target as HTMLInputElement).value)}
-                        placeholder="Type while recording..."
-                        style={{
-                            backgroundColor: "#1e1f22",
-                            border: "1px solid #383a40",
-                            borderRadius: "4px",
-                            padding: "8px",
-                            color: "#dbdee1",
-                            fontSize: "13px",
-                            outline: "none",
-                        }}
-                    />
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <label style={{ fontSize: "12px", color: "#b5bac1" }}>Button Click Target</label>
-                    <button
-                        id="test-button-target"
-                        onClick={() => setClickCount((c) => c + 1)}
-                        style={{
-                            backgroundColor: "#2b2d31",
-                            border: "1px solid #383a40",
-                            borderRadius: "4px",
-                            padding: "8px",
-                            color: "#dbdee1",
-                            cursor: "pointer",
-                            fontSize: "13px",
-                            fontWeight: 500,
-                            textAlign: "left",
-                        }}
-                    >
-                        Click Count: {clickCount}
-                    </button>
-                </div>
-            </div>
-
-            {/* Recorded Steps Preview & Execution Log */}
-            <div
+                data-macro-ignore="true"
                 style={{
                     flex: 1,
                     minHeight: "120px",
@@ -265,20 +190,8 @@ export default function MacroView() {
                     overflowY: "auto",
                 }}
             >
-                {logs.length === 0 && actions.length > 0 ? (
-                    <div>
-                        <div style={{ color: "#949ba4", marginBottom: "6px", fontFamily: "sans-serif" }}>
-                            Recorded Steps ({actions.length}):
-                        </div>
-                        {actions.map((act, i) => (
-                            <div key={i} style={{ color: "#8be9fd", marginBottom: "2px" }}>
-                                [{i + 1}/{actions.length}] {act.type.toUpperCase()} {"->"} {act.selector}{" "}
-                                {act.value ? `("${act.value}")` : ""}
-                            </div>
-                        ))}
-                    </div>
-                ) : logs.length === 0 ? (
-                    <span style={{ color: "#949ba4", fontFamily: "sans-serif" }}>No macro actions recorded or playing...</span>
+                {logs.length === 0 ? (
+                    <span style={{ color: "#949ba4", fontFamily: "sans-serif" }}>No macro playback active...</span>
                 ) : (
                     logs.map((log, i) => <div key={i}>{log}</div>)
                 )}

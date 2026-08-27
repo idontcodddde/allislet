@@ -29,7 +29,6 @@ export function AppShell() {
         return Boolean(config.activeTabs?.includes("sidebar"));
     }, [config.activeTabs]);
 
-    // Auto-sync active tab signal to first valid view if unassigned
     useEffect(() => {
         const exists = enabledViews.some((v) => v.id === currentTab);
         if (!exists && enabledViews.length > 0) {

@@ -1,5 +1,6 @@
 import { defineConfig } from "allislet";
-
+import { hotkeyManager } from "allislet";
+import { RegisterDoThingHotkey } from "./src/hotkeys/doThing";
 export default defineConfig({
     id: "my-custom-bookmarklet",
     name: "DevTools Suite",
@@ -30,12 +31,23 @@ export default defineConfig({
         "sidebar",
     ],
     hotkeys: [
-        { combo: "Alt+K", action: "ui:open-command-palette" },
+        { combo: "Alt+K", action: "ui:do-thing" },
     ],
     onMount({ eventBus, pageExec }) {
         console.log("[Allislet] Framework engine initialized!");
+
+        hotkeyManager.init(
+            [
+                { combo: "Alt+K", action: "ui:do-thing" },
+            ],
+            eventBus,
+        );
+
+        RegisterDoThingHotkey();
     },
     onCleanup() {
+        // Destroy hotkey listeners on teardown
+        hotkeyManager.destroy();
         console.log("[Allislet] Cleaned up runtime resources.");
     },
 });

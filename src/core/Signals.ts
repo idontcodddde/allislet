@@ -9,7 +9,7 @@ export const userThemeMode = stateRegistry.register<string>(
 
 export const activeTabSignal = stateRegistry.register<string>(
     "active_tab",
-    config.activeTabs?.[0] || "network-logger",
+    config.activeTabs?.[0] || "executorn",
 );
 
 export const overlayPositionSignal = stateRegistry.register<OverlayPosition>(

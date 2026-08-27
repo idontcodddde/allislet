@@ -10,7 +10,7 @@ import { windowManager } from "./core/WindowManager";
 import { AllisletProvider } from "./context/AllisletContext";
 import { overlayPositionSignal } from "./core/Signals";
 import { getPositionStyles } from "./utils/position";
-
+import { ModalContainer } from "./ui/Modal";
 storage.configure(config.storage);
 
 let hostElement: HTMLElement | null = null;
@@ -50,6 +50,8 @@ async function bootstrapLifecycle(): Promise<void> {
 
     windowManager.attach(hostElement, shadowRoot);
 
+
+
     render(
       <AllisletProvider
         config={config}
@@ -58,6 +60,7 @@ async function bootstrapLifecycle(): Promise<void> {
         storage={storage}
         antiDetect={antiDetect}
       >
+        <ModalContainer />
         <AppShell />
       </AllisletProvider>,
       renderTarget

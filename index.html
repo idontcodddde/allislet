@@ -7,9 +7,56 @@
   </head>
   <body>
     <div id="app">
-      <h1>Local Testing Page</h1>
-      <p>This mimics a target site where your bookmarklet executes.</p>
+      <h1>Test</h1>
+      <p>test</p>
     </div>
+
+    <button onclick="console.log('clicked')">click</button>
+
+    <hr />
+
+    <!-- Unstyled Host DOM Test Form -->
+    <form id="sample-test-form" action="#" onsubmit="event.preventDefault()">
+      <h2>Host DOM Test Form</h2>
+
+      <div>
+        <label for="username">Username:</label><br />
+        <input type="text" id="username" name="username" />
+      </div>
+      <br />
+
+      <div>
+        <label for="email">Email:</label><br />
+        <input type="email" id="email" name="email" />
+      </div>
+      <br />
+
+      <div>
+        <label for="role">Role:</label><br />
+        <select id="role" name="role">
+          <option value="developer">Developer</option>
+          <option value="designer">Designer</option>
+          <option value="manager">Manager</option>
+        </select>
+      </div>
+      <br />
+
+      <div>
+        <label for="bio">Bio:</label><br />
+        <textarea id="bio" name="bio" rows="4" cols="30"></textarea>
+      </div>
+      <br />
+
+      <div>
+        <label for="newsletter">
+          <input type="checkbox" id="newsletter" name="newsletter" />
+          Subscribe to newsletter
+        </label>
+      </div>
+      <br />
+
+      <button type="submit">Submit Host Form</button>
+    </form>
 
     <script type="module" src="/src/main.tsx"></script>
   </body>
