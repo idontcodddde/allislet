@@ -1,4 +1,5 @@
 import type { AllisletConfig } from "./types";
+import { useSignalValue } from "./hooks/useSignalValue";
 
 // Core Engine & Utilities
 export { EventBus, eventBus } from "./core/EventBus";
@@ -71,9 +72,54 @@ export {
 export { Toast, ToastContainer, type ToastOptions } from "./ui/Toast";
 export { ErrorBoundary } from "./components/ErrorBoundary";
 
-// Types & Helper
-export type { AllisletConfig };
+// Url and page related stuff
+export { URLState } from "./core/URLState";
+export { type BroadcastMessage, TabBroadcast } from "./core/TabBroadcast";
+export { PageRouter } from "./core/PageRouter";
+export { type ActionHandler, DeepLnk } from "./core/DeepLnk";
 
+// Extractors/exporters
+export { TableScraper } from "./core/TableScraper";
+export { CSVExporter, JSONExporter } from "./core/Exporters";
+
+// Native systems like screenshots and file system stuff
+export { ScreenCapture } from "./core/ScreenCapture";
+export { FileSystemAccess } from "./core/FileSystemAccess";
+
+// Storage managers
+export { IndexedDBExplorer } from "./core/IndexedDBExplorer";
+export { CookieManager, type CookieOptions } from "./core/CookieManager";
+
+// Performance, Console & Async Utilities
+
+export { PerfProfiler } from "./core/PerfProfiler";
+export { ConsoleRedirector, type LogEntry } from "./core/ConsoleRedirector";
+export { AsyncQueue } from "./core/AsyncQueue";
+export { CronTask } from "./core/CronTask";
+export { WorkerOffloader } from "./core/WorkerOffloader";
+export { SpeechEngine, type SpeechOptions } from "./core/SpeechEngine";
+export { Clipboard } from "./core/Clipboard";
+export { MediaSniffer } from "./core/MediaSniffer";
+export { DiffViewer, type DiffViewerProps } from "./ui/DiffViewer";
+
+// Data and library/initialization stuff
+export { type ExternalLibrary } from "./types/libs";
+export { initAllislet } from "./core/init";
+export { app, type AppMetadata } from "./core/AppMetadata";
+export { LibraryLoader } from "./core/LibraryLoader";
+export {
+    setGlobalDataUrl,
+    useData,
+    type UseDataOptions,
+    type UseDataResult,
+} from "./hooks/useData";
+
+// Vite plugin
+export { allisletPlugin } from "./plugin";
+
+// Types & Helpers & Hooks
+export type { AllisletConfig };
+export { useSignalValue } from "./hooks/useSignalValue";
 export function defineConfig(config: AllisletConfig): AllisletConfig {
     return config;
 }

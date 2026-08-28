@@ -12,7 +12,7 @@ export default defineConfig({
     },
     storage: {
         namespace: "my_app_v1",
-        crossDomainHubUrl: "http://localhost:3000/public/storage.html",
+        crossDomainHubUrl: "http://localhost:5173/public/storage.html",
         encryptLocalStorage: false,
     },
     features: {

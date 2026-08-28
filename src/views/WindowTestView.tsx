@@ -3,6 +3,7 @@ import { windowManager } from "../core/WindowManager";
 import { config as exampleWindowConfig } from "../windows/ExampleWindow";
 import { Icon } from "../components/Icon";
 import { Toast } from "../ui/Toast";
+import { TabBroadcast } from "../core/TabBroadcast";
 
 export const meta = {
     id: "window-modal-test",
@@ -12,6 +13,12 @@ export const meta = {
 };
 
 export default function WindowTestView() {
+    const channel = new TabBroadcast("app_sync");
+
+    const unsubscribe = channel.on<string>("THING_CHANGED", (thing) => {
+        console.log("Thing switched in another tab to:", thing);
+    });
+
     const handleOpenExampleWindow = () => {
         Toast.info("Opened Example Window");
         windowManager.openWindow(exampleWindowConfig);
@@ -109,6 +116,28 @@ export default function WindowTestView() {
                         <Icon icon="ph:square-half-bold" size="18px" />
                         Open Imperative Modal
                     </button>
+                    <button
+                        onClick={() => {
+                            channel.post("THING_CHANGED", "it changed lil bro");
+                        }}
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            padding: "10px 14px",
+                            backgroundColor: "#2b2d31",
+                            color: "#dbdee1",
+                            border: "1px solid #3f4248",
+                            borderRadius: "6px",
+                            fontWeight: 500,
+                            cursor: "pointer",
+                            fontSize: "13px",
+                        }}
+                    >
+                        <Icon icon="ph:square-half-bold" size="18px" />
+                        make thing change
+                    </button>
+
                 </div>
             </div>
 

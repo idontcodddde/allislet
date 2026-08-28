@@ -1,10 +1,15 @@
 {
   "name": "allislet",
   "type": "module",
+  "bin": {
+    "allislet": "./dist/cli/index.js"
+  },
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "docs:dev": "npm --prefix docs run start",
+    "docs:build": "npm --prefix docs run build"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.10.6",
@@ -16,6 +21,7 @@
     "typescript": "^7.0.2"
   },
   "dependencies": {
+    "@docusaurus/tsconfig": "^3.10.2",
     "@iconify/react": "^6.0.2",
     "@preact/signals": "^2.11.1",
     "preact": "^10.29.8"
