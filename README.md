@@ -1,6 +1,6 @@
 # Allislet
 
-Allislet is an experimental Preact wrapper designed specifically for building browser bookmarklets and shadow-injected overlay suites. It provides built-in Shadow DOM mounting, layout shell primitives, and state providers to build isolated, multi-view tools inside host web pages.
+Allislet is an experimental Preact wrapper designed specifically for building browser bookmarklets and shadow-injected overlay suites. It provides built-in Shadow DOM mounting, layout shell primitives, and state providers to build isolated, multi-view tools inside host web pages. I originally made it to be a framework, but now I decided its more of a preset for making bookmarklets.
 
 > **Current Project Status: Meme**
 > 
