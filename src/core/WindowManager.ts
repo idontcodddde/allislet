@@ -55,6 +55,9 @@ export class WindowManager {
         );
         if (isManagedWindow) return;
 
+        // Bring main window to focus whenever clicked
+        this.focusMainWindow();
+
         const dragHandle = path.find(
             (el) =>
                 el instanceof HTMLElement &&
@@ -130,10 +133,9 @@ export class WindowManager {
             }
         } else {
             // Reset main host container
-            const mainContainer =
-                this.shadowRoot?.querySelector<HTMLElement>(
-                    "[data-window-container]",
-                ) ||
+            const mainContainer = this.shadowRoot?.querySelector<HTMLElement>(
+                "[data-window-container]",
+            ) ||
                 this.hostElement;
             if (mainContainer) {
                 mainContainer.style.transform = "translate3d(0px, 0px, 0px)";
@@ -193,7 +195,7 @@ export class WindowManager {
             boxShadow: "0 12px 32px rgba(0,0,0,0.5)",
             display: "flex",
             flexDirection: "column",
-            zIndex: "2147483646",
+            zIndex: `${Date.now().toString().slice(-8)}`,
             overflow: "hidden",
             pointerEvents: "auto",
         });
@@ -244,6 +246,31 @@ export class WindowManager {
         const entry = this.activeWindows.get(id);
         if (entry) {
             entry.element.style.zIndex = `${Date.now().toString().slice(-8)}`;
+        }
+    }
+
+    /**
+     * Focuses the main application window by incrementing its internal Shadow DOM z-index.
+     */
+    public focusMainWindow(): void {
+        if (!this.shadowRoot) return;
+
+        const mainWin =
+            this.shadowRoot.querySelector<HTMLElement>("[data-main-window]") ||
+            this.shadowRoot.querySelector<HTMLElement>(
+                "[data-window-container]",
+            ) ||
+            this.shadowRoot.querySelector<HTMLElement>(
+                "#allislet-render-target > div",
+            );
+
+        if (mainWin) {
+            if (
+                !mainWin.style.position || mainWin.style.position === "static"
+            ) {
+                mainWin.style.position = "relative";
+            }
+            mainWin.style.zIndex = `${Date.now().toString().slice(-8)}`;
         }
     }
 }
