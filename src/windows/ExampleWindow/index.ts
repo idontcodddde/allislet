@@ -8,6 +8,7 @@ export const config: WindowConfig = {
     id: "custom-window",
     title: "Custom d",
     type: "sidebar",
+    persistentSidebar: true,
     // component: h(ExampleApp, null),
     draggable: true,
     width: "600px",

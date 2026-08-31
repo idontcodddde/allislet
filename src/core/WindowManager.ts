@@ -1,5 +1,7 @@
 import { ComponentChildren, h, render } from "preact";
 import { useState } from "preact/hooks";
+import { Signal, signal } from "@preact/signals";
+import { useSignalValue } from "../hooks/useSignalValue";
 import { Icon } from "../components/Icon";
 
 export interface WindowView {
@@ -18,6 +20,8 @@ export interface WindowConfig {
     draggable?: boolean;
     width?: number | string;
     height?: number | string;
+    persistentSidebar?: boolean;
+    activeTabSignal?: Signal<string>;
 }
 
 interface ManagedWindow {
@@ -31,6 +35,36 @@ export class WindowManager {
     private hostElement: HTMLElement | null = null;
     private shadowRoot: ShadowRoot | null = null;
     private activeWindows: Map<string, ManagedWindow> = new Map();
+    private persistentTabSignals: Map<string, Signal<string>> = new Map();
+
+    /**
+     * Creates or retrieves a persistent Signal for a specific windowId,
+     * backed by localStorage so state survives browser refreshes.
+     */
+    public getTabSignal(windowId: string, defaultTab: string): Signal<string> {
+        if (!this.persistentTabSignals.has(windowId)) {
+            const storageKey = `allislet_win_tab_${windowId}`;
+            let initialTab = defaultTab;
+
+            try {
+                const stored = localStorage.getItem(storageKey);
+                if (stored) initialTab = stored;
+            } catch (_) {}
+
+            const tabSignal = signal<string>(initialTab);
+
+            // Persist changes to localStorage per windowId
+            tabSignal.subscribe((val) => {
+                try {
+                    if (val) localStorage.setItem(storageKey, val);
+                } catch (_) {}
+            });
+
+            this.persistentTabSignals.set(windowId, tabSignal);
+        }
+
+        return this.persistentTabSignals.get(windowId)!;
+    }
 
     /**
      * Attaches host elements and root drag listener for the main application window.
@@ -47,7 +81,6 @@ export class WindowManager {
         const e = evt as PointerEvent;
         const path = e.composedPath();
 
-        // Skip pointer handling if event originated inside a dynamically opened popup window
         const isManagedWindow = path.some(
             (el) =>
                 el instanceof HTMLElement && el.id &&
@@ -55,7 +88,6 @@ export class WindowManager {
         );
         if (isManagedWindow) return;
 
-        // Bring main window to focus whenever clicked inside Shadow DOM
         this.focusMainWindow();
 
         const dragHandle = path.find(
@@ -119,9 +151,6 @@ export class WindowManager {
         window.addEventListener("pointercancel", handlePointerUp);
     };
 
-    /**
-     * Resets inner drag translation transforms without clearing hostElement getPositionStyles rules.
-     */
     public resetPosition(id?: string): void {
         if (id) {
             const entry = this.activeWindows.get(id);
@@ -281,15 +310,41 @@ function WindowRenderer({
     onClose: () => void;
     onFocus: () => void;
 }) {
-    const [activeViewId, setActiveViewId] = useState<string>(
-        config.views && config.views.length > 0 ? config.views[0].id : "",
-    );
+    const initialTab = config.views && config.views.length > 0
+        ? config.views[0].id
+        : "";
+
+    // Resolve isolated persistent Signal per window ID or fallback to local state
+    const activeTabSignal = config.persistentSidebar
+        ? (config.activeTabSignal ||
+            windowManager.getTabSignal(config.id, initialTab))
+        : null;
+
+    const localState = useState<string>(initialTab);
+    const signalTab = activeTabSignal ? useSignalValue(activeTabSignal) : null;
+
+    const rawTabId = activeTabSignal
+        ? (signalTab || initialTab)
+        : localState[0];
+
+    // Ensure tab ID is valid for current views array
+    const currentTabId = config.views?.some((v) => v.id === rawTabId)
+        ? rawTabId
+        : initialTab;
+
+    const setActiveTab = (tabId: string) => {
+        if (activeTabSignal) {
+            activeTabSignal.value = tabId;
+        } else {
+            localState[1](tabId);
+        }
+    };
 
     const isDraggable = config.draggable !== false;
-    const activeView = config.views?.find((v) => v.id === activeViewId);
+    const activeView = config.views?.find((v) => v.id === currentTabId) ||
+        config.views?.[0];
 
     const handleHeaderPointerDown = (e: PointerEvent) => {
-        // Bring window to front immediately on header click/drag
         onFocus();
 
         const target = e.target as HTMLElement | null;
@@ -412,7 +467,7 @@ function WindowRenderer({
                                         e.stopPropagation(),
                                     onClick: (e: Event) => {
                                         e.stopPropagation();
-                                        setActiveViewId(v.id);
+                                        setActiveTab(v.id);
                                     },
                                     style: {
                                         display: "flex",
@@ -421,10 +476,10 @@ function WindowRenderer({
                                         padding: "6px 8px",
                                         borderRadius: "4px",
                                         border: "none",
-                                        backgroundColor: activeViewId === v.id
+                                        backgroundColor: currentTabId === v.id
                                             ? "#2b2d31"
                                             : "transparent",
-                                        color: activeViewId === v.id
+                                        color: currentTabId === v.id
                                             ? "#fff"
                                             : "#949ba4",
                                         fontSize: "12px",

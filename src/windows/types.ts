@@ -11,6 +11,7 @@ export interface WindowConfig {
     id: string;
     title: string;
     type?: "component" | "sidebar";
+    persistentSidebar?: boolean;
     component?: ComponentChildren;
     views?: WindowView[];
     draggable?: boolean;
