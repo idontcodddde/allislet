@@ -3,8 +3,6 @@ import { useAllislet } from "./context/AllisletContext";
 import { useEffect } from "preact/hooks";
 import { registerCommandPaletteUtil } from "./utils/commandPalette";
 
-import { RegisterDoThingHotkey } from "./hotkeys/doThing"
-
 export function App() {
   const { pageExec, eventBus } = useAllislet();
   useEffect(() => {

@@ -7,7 +7,7 @@ interface ClientData {
     rooms: Set<string>;
 }
 
-const PORT = 8080;
+const PORT = 5180;
 const clients = new Set<ServerWebSocket<ClientData>>();
 
 function broadcastUserList(): void {
