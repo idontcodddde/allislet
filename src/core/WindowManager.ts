@@ -55,7 +55,7 @@ export class WindowManager {
         );
         if (isManagedWindow) return;
 
-        // Bring main window to focus whenever clicked
+        // Bring main window to focus whenever clicked inside Shadow DOM
         this.focusMainWindow();
 
         const dragHandle = path.find(
@@ -83,9 +83,8 @@ export class WindowManager {
                 el.hasAttribute("data-window-container"),
         ) as HTMLElement | undefined) ||
             this.shadowRoot?.querySelector<HTMLElement>(
-                "[data-window-container]",
-            ) ||
-            this.hostElement;
+                "[data-main-window], [data-window-container]",
+            );
 
         if (!targetContainer) return;
 
@@ -121,7 +120,7 @@ export class WindowManager {
     };
 
     /**
-     * Resets window position(s) back to default alignment (0,0 transform).
+     * Resets inner drag translation transforms without clearing hostElement getPositionStyles rules.
      */
     public resetPosition(id?: string): void {
         if (id) {
@@ -129,23 +128,20 @@ export class WindowManager {
             if (entry) {
                 entry.x = 0;
                 entry.y = 0;
-                entry.element.style.transform = "translate3d(0px, 0px, 0px)";
+                entry.element.style.transform = "";
             }
         } else {
-            // Reset main host container
             const mainContainer = this.shadowRoot?.querySelector<HTMLElement>(
-                "[data-window-container]",
-            ) ||
-                this.hostElement;
+                "[data-main-window], [data-window-container]",
+            );
             if (mainContainer) {
-                mainContainer.style.transform = "translate3d(0px, 0px, 0px)";
+                mainContainer.style.transform = "";
             }
 
-            // Reset open child windows
             this.activeWindows.forEach((win) => {
                 win.x = 0;
                 win.y = 0;
-                win.element.style.transform = "translate3d(0px, 0px, 0px)";
+                win.element.style.transform = "";
             });
         }
     }
@@ -200,7 +196,6 @@ export class WindowManager {
             pointerEvents: "auto",
         });
 
-        // Prevent events from bleeding through to underlying UI/page elements
         const stopBleedThrough = (e: Event) => e.stopPropagation();
         windowEl.addEventListener("pointerdown", (e) => {
             e.stopPropagation();
@@ -226,6 +221,7 @@ export class WindowManager {
                 config,
                 managedWin,
                 onClose: () => this.closeWindow(config.id),
+                onFocus: () => this.focusWindow(config.id),
             }),
             windowEl,
         );
@@ -249,9 +245,6 @@ export class WindowManager {
         }
     }
 
-    /**
-     * Focuses the main application window by incrementing its internal Shadow DOM z-index.
-     */
     public focusMainWindow(): void {
         if (!this.shadowRoot) return;
 
@@ -281,10 +274,12 @@ function WindowRenderer({
     config,
     managedWin,
     onClose,
+    onFocus,
 }: {
     config: WindowConfig;
     managedWin: ManagedWindow;
     onClose: () => void;
+    onFocus: () => void;
 }) {
     const [activeViewId, setActiveViewId] = useState<string>(
         config.views && config.views.length > 0 ? config.views[0].id : "",
@@ -294,6 +289,9 @@ function WindowRenderer({
     const activeView = config.views?.find((v) => v.id === activeViewId);
 
     const handleHeaderPointerDown = (e: PointerEvent) => {
+        // Bring window to front immediately on header click/drag
+        onFocus();
+
         const target = e.target as HTMLElement | null;
         if (
             target && target.closest("button, input, textarea, [data-no-drag]")
@@ -343,7 +341,6 @@ function WindowRenderer({
                 color: "#dbdee1",
             },
         },
-        /* Window Header */
         h(
             "div",
             {
@@ -387,13 +384,11 @@ function WindowRenderer({
                 "✕",
             ),
         ),
-        /* Window Body */
         h(
             "div",
             { style: { display: "flex", flex: 1, overflow: "hidden" } },
             config.type === "sidebar" && config.views && config.views.length > 0
                 ? [
-                    /* Sidebar Navigation */
                     h(
                         "div",
                         {
@@ -445,7 +440,6 @@ function WindowRenderer({
                             )
                         ),
                     ),
-                    /* Active Tab View Panel */
                     h(
                         "div",
                         {

@@ -11,9 +11,32 @@ import { AllisletProvider } from "./context/AllisletContext";
 import { overlayPositionSignal } from "./core/Signals";
 import { getPositionStyles } from "./utils/position";
 import { ModalContainer } from "./ui/Modal";
+
 storage.configure(config.storage);
 
 let hostElement: HTMLElement | null = null;
+
+/**
+ * Applies positional CSS rules to the host element without breaking position switches or flex layout.
+ */
+function updateHostPosition(element: HTMLElement, position: any): void {
+  // Clear directional and flex properties so changing positions cleans up completely
+  element.style.top = "";
+  element.style.bottom = "";
+  element.style.left = "";
+  element.style.right = "";
+  element.style.transform = "";
+  element.style.display = "";
+  element.style.justifyContent = "";
+  element.style.alignItems = "";
+
+  Object.assign(element.style, {
+    position: "fixed",
+    zIndex: "2147483647",
+    pointerEvents: "none",
+    ...getPositionStyles(position),
+  });
+}
 
 async function bootstrapLifecycle(): Promise<void> {
   const containerId = config.id || "allislet-root";
@@ -25,32 +48,46 @@ async function bootstrapLifecycle(): Promise<void> {
 
     hostElement = document.createElement("div");
     hostElement.id = containerId;
-    Object.assign(hostElement.style, getPositionStyles(overlayPositionSignal.value));
+    updateHostPosition(hostElement, overlayPositionSignal.value);
 
+    // Dynamic position updates via signal
     overlayPositionSignal.subscribe((newPos) => {
       if (hostElement) {
-        Object.assign(hostElement.style, getPositionStyles(newPos));
+        updateHostPosition(hostElement, newPos);
         windowManager.resetPosition();
       }
     });
 
     document.body.appendChild(hostElement);
-    const shadowRoot = hostElement.attachShadow({ mode: "closed" });
+
+    const shadowRoot = hostElement.attachShadow({ mode: "open" });
 
     const styleEl = document.createElement("style");
     styleEl.textContent = `
-      :host { all: initial; font-family: sans-serif; }
-      *, *::before, *::after { box-sizing: border-box; }
+      :host {
+        pointer-events: none !important;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+      }
+
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
+      #allislet-render-target {
+        display: contents !important;
+      }
+
+      [data-window-container] {
+        pointer-events: auto !important;
+      }
     `;
     shadowRoot.appendChild(styleEl);
 
     const renderTarget = document.createElement("div");
-    renderTarget.style.pointerEvents = "auto";
+    renderTarget.id = "allislet-render-target";
     shadowRoot.appendChild(renderTarget);
 
     windowManager.attach(hostElement, shadowRoot);
-
-
 
     render(
       <AllisletProvider
