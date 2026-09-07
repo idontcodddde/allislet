@@ -11,6 +11,7 @@ import { AllisletProvider } from "./context/AllisletContext";
 import { overlayPositionSignal } from "./core/Signals";
 import { getPositionStyles } from "./utils/position";
 import { ModalContainer } from "./ui/Modal";
+import { initAllislet } from "./core/init";
 
 storage.configure(config.storage);
 
@@ -45,6 +46,8 @@ async function bootstrapLifecycle(): Promise<void> {
   try {
     await storage.init();
     await stateRegistry.hydrateAll();
+    await initAllislet(config);
+
 
     hostElement = document.createElement("div");
     hostElement.id = containerId;

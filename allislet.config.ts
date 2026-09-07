@@ -5,6 +5,9 @@ export default defineConfig({
     id: "my-custom-bookmarklet",
     name: "DevTools Suite",
     version: "1.0.0",
+    meta: {
+        someCustomMeta: "custom meta can also be defined in the config and will spawn in window.AppMeta",
+    },
     theme: {
         mode: "dark",
         accentColor: "#74c7ec",

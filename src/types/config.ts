@@ -10,6 +10,7 @@ export interface AllisletConfig {
     name: string;
     version: string;
     dataUrl?: string;
+    meta?: Record<string, unknown>;
     libraries?: ExternalLibrary[];
     theme?: ThemeConfig;
     storage?: StorageConfig;
