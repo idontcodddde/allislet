@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 import preact from "@preact/preset-vite";
-import { allisletPlugin } from "./src/plugin.ts";
+import { allisletPlugin } from "./src/plugin";
 import path from "path";
 
 export default defineConfig({

@@ -32,7 +32,7 @@ function resolveBaseUrl(customUrl?: string): string {
         return "http://localhost:5173/data";
     }
 
-    return config.dataUrl;
+    return config.dataUrl ?? "/data";
 }
 
 export async function useData<T = unknown>(
