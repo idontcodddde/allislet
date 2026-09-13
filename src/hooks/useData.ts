@@ -1,3 +1,5 @@
+import config from "@config";
+
 export interface UseDataOptions {
     baseUrl?: string;
     headers?: Record<string, string>;
@@ -30,11 +32,7 @@ function resolveBaseUrl(customUrl?: string): string {
         return "http://localhost:5173/data";
     }
 
-    if (typeof window !== "undefined") {
-        return `${window.location.origin}/data`;
-    }
-
-    return "/data";
+    return config.dataUrl;
 }
 
 export async function useData<T = any>(
