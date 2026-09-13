@@ -1,7 +1,9 @@
-export interface UseDataOptions {
+import config from "@config";
+
+export interface UseDataOptions<T = unknown> {
     baseUrl?: string;
     headers?: Record<string, string>;
-    transform?: (data: any) => any;
+    transform?: (data: unknown) => T;
 }
 
 export interface UseDataResult<T> {
@@ -24,22 +26,18 @@ function resolveBaseUrl(customUrl?: string): string {
 
     const isDev =
         (typeof process !== "undefined" && process.env?.NODE_ENV === "development") ||
-        (typeof import.meta !== "undefined" && (import.meta as any).env?.DEV);
+        (typeof import.meta !== "undefined" && import.meta.env?.DEV);
 
     if (isDev) {
         return "http://localhost:5173/data";
     }
 
-    if (typeof window !== "undefined") {
-        return `${window.location.origin}/data`;
-    }
-
-    return "/data";
+    return config.dataUrl;
 }
 
-export async function useData<T = any>(
+export async function useData<T = unknown>(
     key: string,
-    options: UseDataOptions = {}
+    options: UseDataOptions<T> = {}
 ): Promise<UseDataResult<T>> {
     const result: UseDataResult<T> = {
         data: null,
@@ -69,11 +67,13 @@ export async function useData<T = any>(
                 throw new Error(`HTTP ${res.status}: Failed to fetch ${fetchUrl}`);
             }
 
-            const rawJson = await res.json();
-            result.data = options.transform ? options.transform(rawJson) : rawJson;
+            const rawJson: unknown = await res.json();
+            result.data = options.transform 
+                ? options.transform(rawJson) 
+                : (rawJson as T);
             result.error = null;
             result.status = "success";
-        } catch (err: any) {
+        } catch (err: unknown) {
             result.data = null;
             result.error = err instanceof Error ? err : new Error(String(err));
             result.status = "error";
