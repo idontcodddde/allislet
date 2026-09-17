@@ -139,7 +139,7 @@ export class ServiceWorkerRegistrar {
      * Returns an cleanup function to remove the listener.
      */
     public interceptMessages(
-        callback: (data: any, event: MessageEvent) => void,
+        callback: (data: unknown, event: MessageEvent<unknown>) => void,
     ): () => void {
         if (!("serviceWorker" in navigator)) {
             console.warn(
@@ -148,7 +148,7 @@ export class ServiceWorkerRegistrar {
             return () => {};
         }
 
-        const handleMessage = (event: MessageEvent) => {
+        const handleMessage = (event: MessageEvent<unknown>) => {
             callback(event.data, event);
         };
 

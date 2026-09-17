@@ -181,9 +181,13 @@ export class WindowManager {
         if (!transform || transform === "none") return { x: 0, y: 0 };
 
         try {
-            const MatrixClass = (window as any).DOMMatrix ||
-                (window as any).WebKitCSSMatrix ||
-                (window as any).MSCSSMatrix;
+            const browserWindow = window as Window & {
+                WebKitCSSMatrix?: new (transform: string) => DOMMatrix;
+                MSCSSMatrix?: new (transform: string) => DOMMatrix;
+            };
+            const MatrixClass = window.DOMMatrix ||
+                browserWindow.WebKitCSSMatrix ||
+                browserWindow.MSCSSMatrix;
 
             if (MatrixClass) {
                 const matrix = new MatrixClass(transform);
@@ -265,6 +269,15 @@ export class WindowManager {
         render(null, entry.element);
         entry.element.remove();
         this.activeWindows.delete(id);
+    }
+
+    public destroy(): void {
+        this.shadowRoot?.removeEventListener("pointerdown", this.handleMainPointerDown);
+        this.activeWindows.forEach((_, id) => this.closeWindow(id));
+        this.activeWindows.clear();
+        this.persistentTabSignals.clear();
+        this.hostElement = null;
+        this.shadowRoot = null;
     }
 
     public focusWindow(id: string): void {

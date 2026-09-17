@@ -42,10 +42,10 @@ export class AntiDetect {
      * Generates a randomized variable handle for global scope attachments.
      * Prevents host scripts from detecting fixed global properties (e.g., window.__ALLISLET_CORE__).
      */
-    randomizeGlobals<T = any>(
+    randomizeGlobals<T = unknown>(
         key: string,
         value: T,
-        target: any = window,
+        target: object = window,
     ): string {
         if (this.assignedGlobals.has(key)) {
             return this.assignedGlobals.get(key)!;
@@ -69,9 +69,14 @@ export class AntiDetect {
     /**
      * Retrieves a previously attached randomized global variable by its alias key.
      */
-    getGlobal<T = any>(key: string, target: any = window): T | undefined {
+    getGlobal<T = unknown>(
+        key: string,
+        target: object = window,
+    ): T | undefined {
         const randomizedKey = this.assignedGlobals.get(key);
-        return randomizedKey ? target[randomizedKey] : undefined;
+        return randomizedKey
+            ? (target as Record<string, unknown>)[randomizedKey] as T | undefined
+            : undefined;
     }
 }
 

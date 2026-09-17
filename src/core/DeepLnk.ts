@@ -6,7 +6,7 @@ export class DeepLnk {
 
     public static create(
         action: string,
-        params: Record<string, any> = {},
+        params: Record<string, string | number | boolean> = {},
     ): string {
         const queryParts = Object.entries(params)
             .map(([k, v]) =>

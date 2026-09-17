@@ -7,6 +7,12 @@ export class FileSystemAccess {
                 "Native File System Access API is not supported in this browser.",
             );
         }
-        return await (window as any).showDirectoryPicker();
+        const pickerWindow = window as Window & {
+            showDirectoryPicker?: () => Promise<FileSystemDirectoryHandle>;
+        };
+        if (!pickerWindow.showDirectoryPicker) {
+            throw new Error("Directory picker is not supported.");
+        }
+        return await pickerWindow.showDirectoryPicker();
     }
 }

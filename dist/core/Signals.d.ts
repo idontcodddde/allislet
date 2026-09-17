@@ -1,0 +1,10 @@
+import { OverlayPosition } from '../utils/position';
+import { AllisletConfig } from '../types/config';
+export declare const userThemeMode: import('@preact/signals-core').Signal<string>;
+export declare const activeTabSignal: import('@preact/signals-core').Signal<string>;
+export declare const overlayPositionSignal: import('@preact/signals-core').Signal<OverlayPosition>;
+export declare function configureSignals(config: AllisletConfig): void;
+export declare const chatActiveTabSignal: import('@preact/signals-core').Signal<"global" | "room" | "dm">;
+export declare const chatActiveTargetSignal: import('@preact/signals-core').Signal<string>;
+export declare const chatRoomsSignal: import('@preact/signals-core').Signal<string[]>;
+export declare const chatDmsSignal: import('@preact/signals-core').Signal<string[]>;

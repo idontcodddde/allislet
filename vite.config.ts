@@ -2,9 +2,18 @@ import { defineConfig } from "vite";
 import preact from "@preact/preset-vite";
 import { allisletPlugin } from "./src/plugin";
 import path from "path";
+import vitePluginDts from "vite-plugin-dts";
 
 export default defineConfig({
-    plugins: [preact(), allisletPlugin()],
+    plugins: [
+        preact(),
+        allisletPlugin(),
+        vitePluginDts({
+            outDir: "dist",
+            entryRoot: "src",
+            insertTypesEntry: true,
+        }),
+    ],
     resolve: {
         alias: {
             "allislet": path.resolve(__dirname, "./src/index.ts"),
@@ -13,12 +22,22 @@ export default defineConfig({
     },
     build: {
         lib: {
-            entry: path.resolve(__dirname, "src/main.tsx"),
+            entry: path.resolve(__dirname, "src/index.ts"),
             name: "Allislet",
-            fileName: () => "allislet.bundle.js",
-            formats: ["iife"],
+            fileName: (format) => `allislet.${format === "es" ? "es" : "umd"}.js`,
+            formats: ["es", "umd"],
         },
         target: "esnext",
-        minify: true,
+        minify: "terser",
+        outDir: "dist",
+        cssCodeSplit: false,
+        rollupOptions: {
+            external: [],
+        },
+        terserOptions: {
+            mangle: false,
+            keep_classnames: true,
+            keep_fnames: true,
+        },
     },
 });

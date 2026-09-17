@@ -30,7 +30,7 @@ function broadcastUserList(): void {
 function sendToClient(
     ws: ServerWebSocket<ClientData>,
     type: string,
-    data: any,
+    data: unknown,
 ): void {
     ws.send(JSON.stringify({ type, data }));
 }

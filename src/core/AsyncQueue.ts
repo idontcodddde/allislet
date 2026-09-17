@@ -1,5 +1,5 @@
 export class AsyncQueue {
-    private queue: Array<() => Promise<any>> = [];
+    private queue: Array<() => Promise<void>> = [];
     private running = false;
     private delayMs: number;
 

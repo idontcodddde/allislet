@@ -1,27 +1,27 @@
-export type EventCallback<T = any> = (payload: T) => void;
+export type EventCallback<T = unknown> = (payload: T) => void;
 
 export class EventBus {
-    private listeners: Map<string, Set<EventCallback>> = new Map();
+    private listeners: Map<string, Set<EventCallback<never>>> = new Map();
 
     /**
      * Subscribe to an event. Returns an unsubscribe function.
      */
-    on<T = any>(event: string, callback: EventCallback<T>): () => void {
+    on<T = unknown>(event: string, callback: EventCallback<T>): () => void {
         if (!this.listeners.has(event)) {
             this.listeners.set(event, new Set());
         }
-        this.listeners.get(event)!.add(callback);
+        this.listeners.get(event)!.add(callback as EventCallback<never>);
 
-        return () => this.off(event, callback);
+        return () => this.off(event, callback as EventCallback<never>);
     }
 
     /**
      * Subscribe to an event exactly once.
      */
-    once<T = any>(event: string, callback: EventCallback<T>): () => void {
+    once<T = unknown>(event: string, callback: EventCallback<T>): () => void {
         const remove = this.on(event, (payload: T) => {
             remove();
-            callback(payload);
+            callback(payload as T);
         });
         return remove;
     }
@@ -29,10 +29,10 @@ export class EventBus {
     /**
      * Unsubscribe a specific callback from an event.
      */
-    off(event: string, callback: EventCallback): void {
+    off(event: string, callback: EventCallback<never>): void {
         const callbacks = this.listeners.get(event);
         if (callbacks) {
-            callbacks.delete(callback);
+            callbacks.delete(callback as EventCallback<never>);
             if (callbacks.size === 0) {
                 this.listeners.delete(event);
             }
@@ -42,17 +42,17 @@ export class EventBus {
     /**
      * Emit an event to all subscribers (supports wildcard '*' listeners).
      */
-    emit<T = any>(event: string, payload?: T): void {
+    emit<T = unknown>(event: string, payload?: T): void {
         // 1. Direct event listeners
         const callbacks = this.listeners.get(event);
         if (callbacks) {
-            callbacks.forEach((cb) => cb(payload));
+            callbacks.forEach((cb) => cb(payload as never));
         }
 
         // 2. Catch-all / Wildcard listeners
         const wildcardCallbacks = this.listeners.get("*");
         if (wildcardCallbacks && event !== "*") {
-            wildcardCallbacks.forEach((cb) => cb({ event, payload }));
+            wildcardCallbacks.forEach((cb) => cb({ event, payload } as never));
         }
     }
 

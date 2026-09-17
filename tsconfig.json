@@ -13,5 +13,11 @@
       "@config": ["./allislet.config.ts"]
     }
   },
-  "include": ["src/**/*", "allislet.config.ts", "vite.config.ts"]
+  "include": [
+    "src/**/*",
+    "examples/**/*",
+    "allislet.config.ts",
+    "vite.config.ts",
+    "vite.standalone.config.ts"
+  ]
 }

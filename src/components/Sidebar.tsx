@@ -1,12 +1,13 @@
 import { useState } from "preact/hooks";
 import { Icon } from "./Icon";
+import type { ComponentType } from "preact";
 
 interface ViewItem {
     id: string;
     name?: string;
     label?: string;
-    icon?: string | any;
-    Component: any;
+    icon?: string;
+    Component: ComponentType<Record<string, never>>;
 }
 
 interface SidebarProps {

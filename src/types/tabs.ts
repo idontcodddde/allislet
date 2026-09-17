@@ -6,4 +6,10 @@ export type AvailableTab =
     | "storage-explorer"
     | "dom-inspector"
     | "settings"
+    | "executor"
+    | "chat-view"
+    | "admin-view"
+    | "macro-view"
+    | "element-picker-view"
+    | "window-test-view"
     | "sidebar";

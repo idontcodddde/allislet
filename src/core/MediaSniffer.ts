@@ -12,10 +12,16 @@ export class MediaSniffer {
     ): MediaStream | null {
         if (!node) return null;
         if ("captureStream" in node) {
-            return (node as any).captureStream();
+            const captureNode = node as unknown as HTMLVideoElement & {
+                captureStream?: () => MediaStream;
+            };
+            return captureNode.captureStream?.() || null;
         }
         if ("mozCaptureStream" in node) {
-            return (node as any).mozCaptureStream();
+            const captureNode = node as unknown as HTMLVideoElement & {
+                mozCaptureStream?: () => MediaStream;
+            };
+            return captureNode.mozCaptureStream?.() || null;
         }
         return null;
     }

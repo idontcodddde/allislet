@@ -1,0 +1,1 @@
+export type AvailableTab = "network-logger" | "websocket-manager" | "js-console" | "macro-studio" | "storage-explorer" | "dom-inspector" | "settings" | "executor" | "chat-view" | "admin-view" | "macro-view" | "element-picker-view" | "window-test-view" | "sidebar";

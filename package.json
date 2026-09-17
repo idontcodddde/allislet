@@ -1,16 +1,39 @@
 {
   "name": "allislet",
+  "version": "1.0.0",
+  "description": "A shadow-isolated, framework-agnostic browser SDK for injected tools and overlays.",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/idontcodddde/allislet.git"
+  },
+  "homepage": "https://github.com/idontcodddde/allislet",
+  "bugs": {
+    "url": "https://github.com/idontcodddde/allislet/issues"
+  },
   "bin": {
     "allislet": "./dist/cli/index.js"
   },
-  "private": true,
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "License"
+  ],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
+  },
   "scripts": {
     "dev": "vite",
     "start": "bun run dev",
-    "build": "vite build",
+    "build": "cmd /c \"node_modules\\.bin\\tsc.exe --noEmit && node_modules\\.bin\\vite.exe build && node_modules\\.bin\\vite.exe build --config vite.standalone.config.ts\"",
+    "build:library": "bun run check-types && vite build",
+    "build:standalone": "vite build --config vite.standalone.config.ts",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bun run check-types",
+    "check-types": "tsc --noEmit",
     "lint": "bun run typecheck",
     "test": "bun run typecheck",
     "check": "bun run typecheck && bun run build",
@@ -20,17 +43,34 @@
     "release:prepare": "bun run ./scripts/release.ts --dry-run",
     "docs:dev": "npm --prefix docs run start",
     "docs:build": "npm --prefix docs run build",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "types": "tsc --emitDeclarationOnly --declaration --outDir dist"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.10.6",
     "@types/bun": "^1.4.2",
     "@types/node": "^26.5.1",
+    "terser": "^5.39.0",
     "typescript": "^5.6.3",
-    "vite": "^8.2.2"
+    "vite": "^8.2.2",
+    "vite-plugin-dts": "^4.5.4"
   },
   "peerDependencies": {
     "typescript": "^7.0.2"
+  },
+  "main": "./dist/allislet.umd.js",
+  "module": "./dist/allislet.es.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/allislet.es.js",
+      "require": "./dist/allislet.umd.js"
+    },
+    "./standalone": {
+      "import": "./dist/standalone.js",
+      "default": "./dist/standalone.js"
+    }
   },
   "dependencies": {
     "@docusaurus/tsconfig": "^3.10.2",

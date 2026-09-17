@@ -11,9 +11,9 @@ export class PageExecutor {
     /**
      * Evaluates code synchronously in the host window context.
      */
-    run<T = any>(
-        codeOrFn: string | ((...args: any[]) => T),
-        ...args: any[]
+    run<T = unknown>(
+        codeOrFn: string | ((...args: unknown[]) => T),
+        ...args: unknown[]
     ): T {
         try {
             if (typeof codeOrFn === "function") {
@@ -29,9 +29,9 @@ export class PageExecutor {
     /**
      * Asynchronously executes code or functions in the main thread context and returns a Promise.
      */
-    async runAsync<T = any>(
-        codeOrFn: string | ((...args: any[]) => Promise<T> | T),
-        ...args: any[]
+    async runAsync<T = unknown>(
+        codeOrFn: string | ((...args: unknown[]) => Promise<T> | T),
+        ...args: unknown[]
     ): Promise<T> {
         return new Promise((resolve, reject) => {
             try {
@@ -103,9 +103,9 @@ export class PageExecutor {
      * Helper method for framework view calls: attempts fast inline execution and automatically
      * falls back to Blob script injection if CSP restricts `eval`/`Function`.
      */
-    async runInMainWorld<T = any>(
-        codeOrFn: string | ((...args: any[]) => T),
-        ...args: any[]
+    async runInMainWorld<T = unknown>(
+        codeOrFn: string | ((...args: unknown[]) => T),
+        ...args: unknown[]
     ): Promise<T> {
         try {
             return await this.runAsync(codeOrFn, ...args);

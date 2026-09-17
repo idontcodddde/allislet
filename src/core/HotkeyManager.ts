@@ -4,8 +4,8 @@ export interface HotkeyConfig {
 }
 
 export interface EventBus {
-    emit(event: string, ...args: any[]): void;
-    on?(event: string, callback: (...args: any[]) => void): void;
+    emit(event: string, ...args: unknown[]): void;
+    on?(event: string, callback: (...args: unknown[]) => void): void;
 }
 
 export class HotkeyManager {

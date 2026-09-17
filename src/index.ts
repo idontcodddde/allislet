@@ -1,5 +1,22 @@
 import type { AllisletConfig } from "./types";
 import { useSignalValue } from "./hooks/useSignalValue";
+import { AllisletSDK } from "./sdk";
+export { AllisletSDK };
+export { mount, mountAllislet } from "./main";
+export type { MountResult } from "./main";
+export { HostReset, ShadowMount } from "./core/ShadowMount";
+export type {
+    AllisletEnvironment,
+    AllisletRenderer,
+    AllisletRuntimeContext,
+    AllisletSDKOptions,
+} from "./types/runtime";
+export function createAllislet(
+    config: AllisletConfig,
+    options?: import("./types/runtime").AllisletSDKOptions,
+): import("./sdk").AllisletSDK {
+    return new AllisletSDK(config, options);
+}
 
 // Core Engine & Utilities
 export { EventBus, eventBus } from "./core/EventBus";
@@ -15,7 +32,18 @@ export {
     HotkeyManager,
     hotkeyManager,
 } from "./core/HotkeyManager";
-export { initNetworkEngine } from "./core/Engine";
+export { destroyNetworkEngine, initNetworkEngine } from "./core/Engine";
+export { AdminStore } from "./core/AdminStore";
+export {
+    SocketChatService,
+    type ChatMessage,
+    type ChatUser,
+} from "./core/SocketChatService";
+export {
+    ServiceWorkerRegistrar,
+    swRegistrar,
+    type ServiceWorkerOptions,
+} from "./core/ServiceWorkerRegistrar";
 
 // Context & Theme
 export { AllisletProvider, useAllislet } from "./context/AllisletContext";

@@ -131,7 +131,10 @@ export class WebSocketManager {
                 self.bus.emit(`ws:${id}:disconnect`, payload);
             });
 
-            (instance as any).__allislet_id = id;
+            Object.defineProperty(instance, "__allislet_id", {
+                value: id,
+                configurable: true,
+            });
 
             return instance;
         } as unknown as typeof WebSocket;

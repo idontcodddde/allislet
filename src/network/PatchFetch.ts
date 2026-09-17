@@ -19,10 +19,11 @@ export interface FetchPatchRules {
 }
 
 let isFetchPatched = false;
+let originalFetch: typeof window.fetch | null = null;
 
 export function patchFetch(rules: FetchPatchRules = {}): void {
     if (isFetchPatched) return;
-    const originalFetch = window.fetch;
+    originalFetch = window.fetch;
 
     const patchedFetch = async function (
         input: RequestInfo | URL,
@@ -76,7 +77,7 @@ export function patchFetch(rules: FetchPatchRules = {}): void {
         }
 
         eventBus.emit("network:fetch:request", { url, method, init });
-        const response = await originalFetch.apply(window, [input, init]);
+        const response = await originalFetch!.apply(window, [input, init]);
 
         if (rules.onResponse) {
             rules.onResponse(url, response.clone());
@@ -93,4 +94,11 @@ export function patchFetch(rules: FetchPatchRules = {}): void {
     window.fetch = patchedFetch as typeof fetch;
 
     isFetchPatched = true;
+}
+
+export function unpatchFetch(): void {
+    if (!isFetchPatched || !originalFetch) return;
+    window.fetch = originalFetch;
+    originalFetch = null;
+    isFetchPatched = false;
 }
