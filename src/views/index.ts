@@ -8,9 +8,9 @@ export interface ViewMeta {
 }
 
 export interface ViewModule {
-    default?: ComponentType<any>;
+    default?: ComponentType<Record<string, never>>;
     meta?: Partial<ViewMeta>;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 export interface RegisteredView {
@@ -18,7 +18,7 @@ export interface RegisteredView {
     label: string;
     icon: string;
     order: number;
-    Component: ComponentType<any>;
+    Component: ComponentType<Record<string, never>>;
 }
 
 const viewModules = import.meta.glob<ViewModule>("./*.{tsx,ts,jsx,js}", {
@@ -52,7 +52,7 @@ export const registeredViews: RegisteredView[] = Object.entries(viewModules)
         const Component = module.default ||
             (Object.entries(module).find(
                 ([key, val]) => key !== "meta" && typeof val === "function",
-            )?.[1] as ComponentType<any>);
+            )?.[1] as ComponentType<Record<string, never>>);
 
         return {
             id: module.meta?.id || generatedId,

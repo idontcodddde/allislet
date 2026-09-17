@@ -3,7 +3,7 @@ export type RulePattern = string | RegExp;
 export interface MockRule {
     type: "silent200" | "drop" | "delay";
     pattern: RulePattern;
-    payload?: any;
+    payload?: unknown;
     delayMs?: number;
 }
 
@@ -13,7 +13,7 @@ export class NetworkMockManager {
     /**
      * Intercepts matching requests and resolves with HTTP 200 + custom mock payload.
      */
-    silent200(urlPattern: RulePattern, payload: any = {}): void {
+    silent200(urlPattern: RulePattern, payload: unknown = {}): void {
         this.rules.push({ type: "silent200", pattern: urlPattern, payload });
     }
 

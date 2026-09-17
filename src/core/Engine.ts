@@ -2,6 +2,8 @@ import { FetchPatchRules, patchFetch } from "../network/PatchFetch";
 import { patchXHR, XHRPatchRules } from "../network/PatchXHR";
 import { wsManager } from "./WebSocketManager";
 import { BearerExtractor } from "../network/BearerExtractor";
+import { unpatchFetch } from "../network/PatchFetch";
+import { unpatchXHR } from "../network/PatchXHR";
 
 export interface ConfigOptions {
     features?: {
@@ -36,4 +38,11 @@ export function initNetworkEngine(config: ConfigOptions): void {
     } else {
         wsManager.unhook();
     }
+}
+
+export function destroyNetworkEngine(): void {
+    unpatchFetch();
+    unpatchXHR();
+    wsManager.unhook();
+    BearerExtractor.enabled = false;
 }

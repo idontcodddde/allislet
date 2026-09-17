@@ -1,17 +1,31 @@
 export interface SocketIoConfig {
     url: string;
     namespace?: string;
-    options?: Record<string, any>;
+    options?: Record<string, unknown>;
+}
+
+export interface SocketIoSocket {
+    emit(event: string, payload: unknown): void;
+    disconnect(): void;
+}
+
+export type SocketIoFactory = (
+    url: string,
+    options?: Record<string, unknown>,
+) => SocketIoSocket;
+
+function getSocketIoFactory(): SocketIoFactory | undefined {
+    return (window as Window & { io?: SocketIoFactory }).io;
 }
 
 export class SocketIoBridge {
-    private sockets: Map<string, any> = new Map();
+    private sockets: Map<string, SocketIoSocket> = new Map();
 
     /**
      * Connects or reuses a socket.io connection for specified namespace.
      */
-    connect(config: SocketIoConfig, ioClient?: any): any {
-        const io = ioClient || (window as any).io;
+    connect(config: SocketIoConfig, ioClient?: SocketIoFactory): SocketIoSocket {
+        const io = ioClient || getSocketIoFactory();
         if (!io) {
             throw new Error(
                 "[Allislet SocketIoBridge] socket.io-client global 'io' not found.",
@@ -22,7 +36,7 @@ export class SocketIoBridge {
         const fullUrl = `${config.url.replace(/\/$/, "")}${namespace}`;
 
         if (this.sockets.has(fullUrl)) {
-            return this.sockets.get(fullUrl);
+            return this.sockets.get(fullUrl)!;
         }
 
         const socket = io(fullUrl, config.options);
@@ -43,11 +57,12 @@ export class SocketIoBridge {
     /**
      * Standardized event emitter for multiplexed namespaces.
      */
-    emit(namespaceKey: string, event: string, payload: any): void {
+    emit(namespaceKey: string, event: string, payload: unknown): void {
         const socket = this.sockets.get(namespaceKey);
         if (socket) {
             socket.emit(event, payload);
         }
+
     }
 
     /**

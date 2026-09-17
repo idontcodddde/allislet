@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Allislet dynamic import example</title>
+    </head>
+    <body>
+        <script type="module">
+            const { createAllislet, defineConfig } = await import(
+                "https://cdn.example.com/allislet/standalone.js"
+            );
+
+            const sdk = createAllislet(defineConfig({
+                id: "dynamic-import-example",
+                name: "Dynamic Import Example",
+                version: "1.0.0",
+                features: {
+                    patchFetch: true,
+                    patchXHR: true,
+                    interceptSockets: true,
+                    autoExtractBearer: true,
+                },
+            }), {
+                builtInUI: false,
+                renderApp({ renderTarget, eventBus }) {
+                    const panel = document.createElement("aside");
+                    panel.innerHTML = `
+                        <strong>Allislet loaded with await import()</strong>
+                        <button type="button">Check API</button>
+                    `;
+                    panel.style.cssText =
+                        "position:fixed;right:16px;bottom:16px;padding:16px;" +
+                        "background:#18191c;color:#fff;border:1px solid #5865f2;" +
+                        "border-radius:8px;z-index:1";
+
+                    panel.querySelector("button")?.addEventListener("click", async () => {
+                        const response = await fetch("/api/health");
+                        eventBus.emit("dynamic-import:health", {
+                            status: response.status,
+                        });
+                    });
+                    renderTarget.append(panel);
+                    return () => panel.remove();
+                },
+            });
+
+            await sdk.mount();
+            globalThis.dynamicImportExample = sdk;
+        </script>
+    </body>
+</html>

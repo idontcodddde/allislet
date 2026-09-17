@@ -44,7 +44,7 @@ export default function ChatView() {
 
     // Socket subscriptions & automatic incoming DM sender addition
     useEffect(() => {
-        const unsubMsg = chatService.onMessage((incoming: any) => {
+        const unsubMsg = chatService.onMessage((incoming: ChatMessage[]) => {
             // Normalize message payload (single vs array)
             const newMsgs: ChatMessage[] = Array.isArray(incoming) ? incoming : [incoming];
 

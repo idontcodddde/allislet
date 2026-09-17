@@ -11,7 +11,7 @@ export class GlobalStorage {
     private iframe: HTMLIFrameElement | null = null;
     private pendingRequests: Map<
         string,
-        { resolve: (val: any) => void; reject: (err: any) => void }
+        { resolve: (val: unknown) => void; reject: (err: unknown) => void }
     > = new Map();
 
     public isReady: Promise<void> = Promise.resolve();
@@ -40,7 +40,7 @@ export class GlobalStorage {
      * Synchronously reads directly from LocalStorage.
      * Used for initializing signals before initial UI mount without race conditions.
      */
-    public getSync<T = any>(key: string): T | null {
+    public getSync<T = unknown>(key: string): T | null {
         const storeKey = `${this.namespace}:${key}`;
         const raw = localStorage.getItem(storeKey);
         if (raw === null || raw === undefined) {
@@ -113,9 +113,9 @@ export class GlobalStorage {
         });
     }
 
-    private async request<T = any>(
+    private async request<T = unknown>(
         action: string,
-        payload: { key?: string; value?: any } = {},
+        payload: { key?: string; value?: unknown } = {},
     ): Promise<T> {
         await this.isReady;
 
@@ -145,7 +145,7 @@ export class GlobalStorage {
             this.pendingRequests.set(id, {
                 resolve: (val) => {
                     clearTimeout(timeoutId);
-                    resolve(val);
+                    resolve(val as T);
                 },
                 reject: (err) => {
                     clearTimeout(timeoutId);
@@ -176,10 +176,10 @@ export class GlobalStorage {
         });
     }
 
-    private executeLocal<T = any>(
+    private executeLocal<T = unknown>(
         action: string,
         storeKey: string,
-        value?: any,
+        value?: unknown,
     ): T {
         if (action === "set") {
             const val = this.encrypt
@@ -217,11 +217,11 @@ export class GlobalStorage {
         return null as unknown as T;
     }
 
-    async get<T = any>(key: string): Promise<T | null> {
+    async get<T = unknown>(key: string): Promise<T | null> {
         return this.request<T>("get", { key });
     }
 
-    async set(key: string, value: any): Promise<boolean> {
+    async set(key: string, value: unknown): Promise<boolean> {
         return this.request<boolean>("set", { key, value });
     }
 

@@ -73,6 +73,55 @@ Runtime behavior is driven by a top-level config object in allislet.config.ts, w
 
 The SDK includes a useData helper for fetching JSON resources from a predictable data path. In local development it defaults to localhost:5173/data, while in production it resolves from the current origin.
 
+### Framework-agnostic consumer integration
+
+The built-in shell uses Preact, but the SDK runtime does not require consumers
+to use Preact. Supply `builtInUI: false` and a `renderApp` callback to render
+with plain DOM, React, Vue, Svelte, or another UI system:
+
+```ts
+import { createAllislet, defineConfig } from "allislet";
+
+const sdk = createAllislet(defineConfig({
+  id: "custom-tool",
+  name: "Custom Tool",
+  version: "1.0.0",
+}), {
+  builtInUI: false,
+  renderApp({ renderTarget, eventBus }) {
+    const button = document.createElement("button");
+    button.textContent = "Load data";
+    button.onclick = async () => {
+      const response = await fetch("/api/data");
+      eventBus.emit("custom:data-loaded", { status: response.status });
+    };
+    renderTarget.append(button);
+    return () => button.remove();
+  },
+});
+
+await sdk.mount();
+```
+
+The same `AllisletSDK` instance exposes storage, window controls, lifecycle
+teardown, and all exported network, DOM, automation, chat, and admin services.
+
+### Publishing to npm
+
+Allislet is configured for the public npm registry. Bun remains the package
+manager and publisher:
+
+```bash
+bun install
+bun run build
+bun publish
+```
+
+For automated publishing, add an npm access token as the repository secret
+`NPM_TOKEN`, create a GitHub release, and the
+[publish workflow](./.github/workflows/publish-npm.yml) will build and publish
+the release tag to npm.
+
 ## Quick start
 
 Install dependencies:

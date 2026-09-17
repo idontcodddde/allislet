@@ -1,4 +1,4 @@
-export interface BroadcastMessage<T = any> {
+export interface BroadcastMessage<T = unknown> {
     type: string;
     payload: T;
     senderId: string;
@@ -6,7 +6,7 @@ export interface BroadcastMessage<T = any> {
 
 export class TabBroadcast {
     private channel: BroadcastChannel | null = null;
-    private listeners: Map<string, Set<(payload: any) => void>> = new Map();
+    private listeners: Map<string, Set<(payload: never) => void>> = new Map();
     private senderId: string = Math.random().toString(36).substring(2, 9);
 
     constructor(channelName: string = "app_tab_broadcast") {
@@ -16,7 +16,7 @@ export class TabBroadcast {
         }
     }
 
-    public post<T = any>(type: string, payload?: T): void {
+    public post<T = unknown>(type: string, payload?: T): void {
         if (!this.channel) return;
         const msg: BroadcastMessage<T> = {
             type,
@@ -26,7 +26,7 @@ export class TabBroadcast {
         this.channel.postMessage(msg);
     }
 
-    public on<T = any>(
+    public on<T = unknown>(
         type: string,
         callback: (payload: T) => void,
     ): () => void {
@@ -34,10 +34,10 @@ export class TabBroadcast {
             this.listeners.set(type, new Set());
         }
         const set = this.listeners.get(type)!;
-        set.add(callback);
+        set.add(callback as (payload: never) => void);
 
         return () => {
-            set.delete(callback);
+            set.delete(callback as (payload: never) => void);
             if (set.size === 0) this.listeners.delete(type);
         };
     }
@@ -48,7 +48,7 @@ export class TabBroadcast {
 
         const callbacks = this.listeners.get(type);
         if (callbacks) {
-            callbacks.forEach((cb) => cb(payload));
+            callbacks.forEach((cb) => cb(payload as never));
         }
     };
 

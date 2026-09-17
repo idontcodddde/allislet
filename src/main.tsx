@@ -1,6 +1,5 @@
 import { render } from "preact";
 import { AppShell } from "./components/AppShell";
-import config from "@config";
 import { eventBus } from "./core/EventBus";
 import { antiDetect } from "./core/AntiDetect";
 import { pageExec } from "./core/PageExecutor";
@@ -8,114 +7,105 @@ import { storage } from "./core/GlobalStorage";
 import { stateRegistry } from "./core/StateRegistry";
 import { windowManager } from "./core/WindowManager";
 import { AllisletProvider } from "./context/AllisletContext";
-import { overlayPositionSignal } from "./core/Signals";
+import { configureSignals, overlayPositionSignal } from "./core/Signals";
 import { getPositionStyles } from "./utils/position";
 import { ModalContainer } from "./ui/Modal";
 import { initAllislet } from "./core/init";
+import type { AllisletConfig } from "./types/config";
+import { HostReset, ShadowMount, type ShadowMountHandle } from "./core/ShadowMount";
+import type {
+    AllisletRenderer,
+    AllisletRuntimeContext,
+    AllisletSDKOptions,
+} from "./types/runtime";
 
-storage.configure(config.storage);
-
-let hostElement: HTMLElement | null = null;
-
-/**
- * Applies positional CSS rules to the host element without breaking position switches or flex layout.
- */
-function updateHostPosition(element: HTMLElement, position: any): void {
-  // Clear directional and flex properties so changing positions cleans up completely
-  element.style.top = "";
-  element.style.bottom = "";
-  element.style.left = "";
-  element.style.right = "";
-  element.style.transform = "";
-  element.style.display = "";
-  element.style.justifyContent = "";
-  element.style.alignItems = "";
-
-  Object.assign(element.style, {
-    position: "fixed",
-    zIndex: "2147483647",
-    pointerEvents: "none",
-    ...getPositionStyles(position),
-  });
+export interface MountResult {
+    mount: ShadowMountHandle;
+    renderTarget: HTMLElement;
+    stopPositionTracking: () => void;
+    stopRenderer: () => void;
 }
 
-async function bootstrapLifecycle(): Promise<void> {
-  const containerId = config.id || "allislet-root";
-  if (document.getElementById(containerId)) return;
-
-  try {
-    await storage.init();
+export async function mountAllislet(
+    config: AllisletConfig,
+    options: AllisletSDKOptions = {},
+): Promise<MountResult> {
+    const runtimeEventBus = options.services?.eventBus || eventBus;
+    const runtimeStorage = options.services?.storage || storage;
+    const runtimePageExec = options.services?.pageExec || pageExec;
+    const runtimeAntiDetect = options.services?.antiDetect || antiDetect;
+    configureSignals(config);
+    await runtimeStorage.init(config.storage);
     await stateRegistry.hydrateAll();
     await initAllislet(config);
 
-
-    hostElement = document.createElement("div");
-    hostElement.id = containerId;
-    updateHostPosition(hostElement, overlayPositionSignal.value);
-
-    // Dynamic position updates via signal
-    overlayPositionSignal.subscribe((newPos) => {
-      if (hostElement) {
-        updateHostPosition(hostElement, newPos);
-        windowManager.resetPosition();
-      }
-    });
-
-    document.body.appendChild(hostElement);
-
-    const shadowRoot = hostElement.attachShadow({ mode: "open" });
-
-    const styleEl = document.createElement("style");
-    styleEl.textContent = `
-      :host {
-        pointer-events: none !important;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-      }
-
-      *, *::before, *::after {
-        box-sizing: border-box;
-      }
-
-      #allislet-render-target {
-        display: contents !important;
-      }
-
-      [data-window-container] {
-        pointer-events: auto !important;
-      }
-    `;
-    shadowRoot.appendChild(styleEl);
-
+    const shadowMount = ShadowMount.create(
+        config.id || "allislet-root",
+        getPositionStyles(overlayPositionSignal.value),
+        {
+            document: options.document,
+            parent: options.mountTarget || options.document?.body,
+        },
+    );
+    HostReset.apply(shadowMount.host);
     const renderTarget = document.createElement("div");
     renderTarget.id = "allislet-render-target";
-    shadowRoot.appendChild(renderTarget);
+    shadowMount.root.appendChild(renderTarget);
 
-    windowManager.attach(hostElement, shadowRoot);
+    const stopPositionTracking = overlayPositionSignal.subscribe((newPosition) => {
+        HostReset.apply(shadowMount.host);
+        Object.assign(shadowMount.host.style, getPositionStyles(newPosition));
+        windowManager.resetPosition();
+    });
 
-    render(
-      <AllisletProvider
-        config={config}
-        eventBus={eventBus}
-        pageExec={pageExec}
-        storage={storage}
-        antiDetect={antiDetect}
-      >
-        <ModalContainer />
-        <AppShell />
-      </AllisletProvider>,
-      renderTarget
-    );
+    windowManager.attach(shadowMount.host, shadowMount.root);
+    const runtimeContext: AllisletRuntimeContext = {
+        config,
+        eventBus: runtimeEventBus,
+        pageExec: runtimePageExec,
+        storage: runtimeStorage,
+        antiDetect: runtimeAntiDetect,
+        host: shadowMount.host,
+        root: shadowMount.root,
+        renderTarget,
+    };
+    const renderer: AllisletRenderer = options.renderApp ||
+        ((context) => {
+            if (options.builtInUI === false) return;
+            render(
+                <AllisletProvider
+                    config={context.config}
+                    eventBus={context.eventBus}
+                    pageExec={context.pageExec}
+                    storage={context.storage}
+                    antiDetect={context.antiDetect}
+                >
+                    <ModalContainer />
+                    <AppShell />
+                </AllisletProvider>,
+                context.renderTarget,
+            );
+            return () => render(null, context.renderTarget);
+        });
+    const rendererCleanup = renderer(runtimeContext);
+    config.onMount?.({
+        eventBus: runtimeEventBus,
+        pageExec: runtimePageExec,
+        storage: runtimeStorage,
+        antiDetect: runtimeAntiDetect,
+    });
 
-    if (typeof config.onMount === "function") {
-      config.onMount({ eventBus, pageExec, storage, antiDetect });
-    }
-  } catch (error) {
-    console.error("[Allislet Lifecycle] Bootstrap error:", error);
-  }
+    return {
+        mount: shadowMount,
+        renderTarget,
+        stopPositionTracking,
+        stopRenderer: rendererCleanup || (() => render(null, renderTarget)),
+    };
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", bootstrapLifecycle, { once: true });
-} else {
-  bootstrapLifecycle();
+export async function mount(
+    config: AllisletConfig,
+    options?: AllisletSDKOptions,
+): Promise<MountResult> {
+    return mountAllislet(config, options);
 }

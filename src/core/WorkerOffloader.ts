@@ -1,7 +1,7 @@
 export class WorkerOffloader {
     public static async run<T>(
-        fn: (...args: any[]) => T,
-        args: any[] = [],
+        fn: (...args: unknown[]) => T,
+        args: unknown[] = [],
     ): Promise<T> {
         return new Promise((resolve, reject) => {
             const workerCode = `

@@ -5,7 +5,7 @@ interface IconProps {
     size?: string | number;
     color?: string;
     className?: string;
-    style?: Record<string, any>;
+    style?: Record<string, string | number | undefined>;
 }
 
 export function Icon({ icon, size = "20px", color, className, style }: IconProps) {

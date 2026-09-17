@@ -3,15 +3,17 @@ import { BearerExtractor } from "./BearerExtractor";
 import { eventBus } from "../core/EventBus";
 
 export interface XHRPatchRules {
-    onRequest?: (method: string, url: string, body?: any) => void;
+    onRequest?: (method: string, url: string, body?: unknown) => void;
     onResponse?: (url: string, xhr: XMLHttpRequest) => void;
 }
 
 let isXHRPatched = false;
+let originalXHR: typeof window.XMLHttpRequest | null = null;
 
 export function patchXHR(rules: XHRPatchRules = {}): void {
     if (isXHRPatched) return;
     const NativeXHR = window.XMLHttpRequest;
+    originalXHR = NativeXHR;
 
     function InterceptedXHR(this: XMLHttpRequest) {
         const xhr = new NativeXHR();
@@ -22,11 +24,13 @@ export function patchXHR(rules: XHRPatchRules = {}): void {
         xhr.open = function (
             method: string,
             url: string | URL,
-            ...args: any[]
+            async = true,
+            username?: string | null,
+            password?: string | null,
         ) {
             _method = method.toUpperCase();
             _url = url.toString();
-            return (originalOpen as any)(method, url, ...args);
+            return originalOpen(method, url, Boolean(async), username, password);
         };
 
         const originalSetHeader = xhr.setRequestHeader.bind(xhr);
@@ -100,6 +104,13 @@ export function patchXHR(rules: XHRPatchRules = {}): void {
     InterceptedXHR.prototype = NativeXHR.prototype;
     Object.assign(InterceptedXHR, NativeXHR);
 
-    window.XMLHttpRequest = InterceptedXHR as any;
+    window.XMLHttpRequest = InterceptedXHR as unknown as typeof XMLHttpRequest;
     isXHRPatched = true;
+}
+
+export function unpatchXHR(): void {
+    if (!isXHRPatched || !originalXHR) return;
+    window.XMLHttpRequest = originalXHR;
+    originalXHR = null;
+    isXHRPatched = false;
 }

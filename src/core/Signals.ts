@@ -1,21 +1,29 @@
-import config from "@config";
 import { stateRegistry } from "./StateRegistry";
 import { OverlayPosition } from "../utils/position";
+import type { AllisletConfig } from "../types/config";
 
 export const userThemeMode = stateRegistry.register<string>(
     "user_theme_mode",
-    config.theme?.mode || "dark",
+    "dark",
 );
 
 export const activeTabSignal = stateRegistry.register<string>(
     "active_tab",
-    config.activeTabs?.[0] || "executor",
+    "executor",
 );
 
 export const overlayPositionSignal = stateRegistry.register<OverlayPosition>(
     "overlay_position",
-    (config.theme?.defaultDockPosition as OverlayPosition) || "center",
+    "center",
 );
+
+export function configureSignals(config: AllisletConfig): void {
+    if (config.theme?.mode) userThemeMode.value = config.theme.mode;
+    if (config.activeTabs?.[0]) activeTabSignal.value = config.activeTabs[0];
+    if (config.theme?.defaultDockPosition) {
+        overlayPositionSignal.value = config.theme.defaultDockPosition as OverlayPosition;
+    }
+}
 
 // Chat Signals
 export const chatActiveTabSignal = stateRegistry.register<"global" | "room" | "dm">(

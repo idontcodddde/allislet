@@ -1,6 +1,6 @@
 export interface LogEntry {
     type: "log" | "warn" | "error";
-    args: any[];
+    args: unknown[];
     timestamp: Date;
 }
 
@@ -15,7 +15,7 @@ export class ConsoleRedirector {
         if (ConsoleRedirector.isCaptured) return;
         ConsoleRedirector.isCaptured = true;
 
-        console.log = (...args: any[]) => {
+        console.log = (...args: unknown[]) => {
             ConsoleRedirector.logs.push({
                 type: "log",
                 args,
@@ -24,7 +24,7 @@ export class ConsoleRedirector {
             ConsoleRedirector.originalLog.apply(console, args);
         };
 
-        console.warn = (...args: any[]) => {
+        console.warn = (...args: unknown[]) => {
             ConsoleRedirector.logs.push({
                 type: "warn",
                 args,
@@ -33,7 +33,7 @@ export class ConsoleRedirector {
             ConsoleRedirector.originalWarn.apply(console, args);
         };
 
-        console.error = (...args: any[]) => {
+        console.error = (...args: unknown[]) => {
             ConsoleRedirector.logs.push({
                 type: "error",
                 args,

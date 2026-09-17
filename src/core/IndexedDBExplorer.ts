@@ -1,5 +1,5 @@
 export class IndexedDBExplorer {
-    public static async readDB(dbName: string): Promise<Record<string, any[]>> {
+    public static async readDB(dbName: string): Promise<Record<string, unknown[]>> {
         return new Promise((resolve, reject) => {
             if (typeof indexedDB === "undefined") {
                 return reject(
@@ -16,7 +16,7 @@ export class IndexedDBExplorer {
             request.onsuccess = async () => {
                 const db = request.result;
                 const storeNames = Array.from(db.objectStoreNames);
-                const result: Record<string, any[]> = {};
+                const result: Record<string, unknown[]> = {};
 
                 try {
                     for (const storeName of storeNames) {
@@ -38,7 +38,7 @@ export class IndexedDBExplorer {
     private static readStore(
         db: IDBDatabase,
         storeName: string,
-    ): Promise<any[]> {
+    ): Promise<unknown[]> {
         return new Promise((resolve, reject) => {
             const tx = db.transaction(storeName, "readonly");
             const store = tx.objectStore(storeName);

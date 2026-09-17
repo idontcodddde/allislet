@@ -1,17 +1,17 @@
 export class CSVExporter {
     public static download(
         filename: string,
-        data: Record<string, any>[] | any[][],
+        data: Record<string, unknown>[] | unknown[][],
     ): void {
         if (!data || !data.length) return;
 
         let csvContent = "";
         if (Array.isArray(data[0])) {
-            csvContent = (data as any[][])
+            csvContent = (data as unknown[][])
                 .map((row) => row.map(CSVExporter.escapeCell).join(","))
                 .join("\n");
         } else {
-            const objArray = data as Record<string, any>[];
+            const objArray = data as Record<string, unknown>[];
             const headers = Array.from(
                 new Set(objArray.flatMap((obj) => Object.keys(obj))),
             );
@@ -33,7 +33,7 @@ export class CSVExporter {
         );
     }
 
-    private static escapeCell(value: any): string {
+    private static escapeCell(value: unknown): string {
         const str = String(value ?? "");
         if (str.includes(",") || str.includes('"') || str.includes("\n")) {
             return `"${str.replace(/"/g, '""')}"`;
@@ -54,7 +54,7 @@ export class CSVExporter {
 }
 
 export class JSONExporter {
-    public static download(filename: string, data: any): void {
+    public static download(filename: string, data: unknown): void {
         const jsonStr = JSON.stringify(data, null, 2);
         const blob = new Blob([jsonStr], {
             type: "application/json;charset=utf-8;",

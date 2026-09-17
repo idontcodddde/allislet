@@ -2,7 +2,7 @@ import { batch, Signal, signal } from "@preact/signals";
 import { GlobalStorage, storage as singletonStorage } from "./GlobalStorage";
 import { EventBus, eventBus as singletonEventBus } from "./EventBus";
 
-interface RegisteredItem<T = any> {
+interface RegisteredItem<T = unknown> {
     key: string;
     sig: Signal<T>;
     defaultValue: T;
