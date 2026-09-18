@@ -55,7 +55,6 @@ export declare class SocketChatService {
     startDM(username: string): void;
     joinRoom(roomName: string): void;
     leaveRoom(roomName: string): void;
-    adminBroadcastRemoteCode(code: string, targetUser?: string): void;
     adminMuteUser(targetUser: string, muted: boolean): void;
     onMessage(cb: MessageCallback): () => void;
     onDMContactsChange(cb: DMContactsCallback): () => void;

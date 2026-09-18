@@ -25,3 +25,12 @@ We will do our best to acknowledge reports promptly and work toward a fix as qui
 ## Supported versions
 
 The project currently prioritizes the latest release line. Older versions may receive limited or no security support depending on their age and maintenance state.
+
+## Responsible use
+
+Allislet does not support remote script execution through its admin console.
+Admin capabilities are limited to chat moderation. Users are responsible for
+what they build or run with Allislet and for complying with applicable laws,
+permissions, and service terms. The maintainers are not responsible for misuse,
+damage, or other outcomes resulting from creations or actions made with the
+project.

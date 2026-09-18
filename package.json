@@ -35,7 +35,7 @@
     "typecheck": "bun run check-types",
     "check-types": "tsc --noEmit",
     "lint": "bun run typecheck",
-    "test": "bun run typecheck",
+    "test": "bun test",
     "check": "bun run typecheck && bun run build",
     "ci": "bun run check",
     "release": "bun run ./scripts/release.ts",
