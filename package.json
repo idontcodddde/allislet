@@ -1,6 +1,6 @@
 {
   "name": "allislet",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A shadow-isolated, framework-agnostic browser SDK for injected tools and overlays.",
   "type": "module",
   "license": "MIT",
