@@ -1,5 +1,6 @@
 import { ComponentType } from "preact";
 import { signal } from "@preact/signals";
+import type { AllisletContextValue } from "../context/AllisletContext";
 
 export interface ViewMeta {
     id: string;
@@ -19,7 +20,8 @@ export interface RegisteredView {
     label: string;
     icon: string;
     order: number;
-    Component: ComponentType<Record<string, never>>;
+    Component?: ComponentType<Record<string, never>>;
+    render?: (context: ViewRenderContext) => void | (() => void);
 }
 
 export interface ViewDefinition {
@@ -27,7 +29,12 @@ export interface ViewDefinition {
     label: string;
     icon?: string;
     order?: number;
-    Component: ComponentType<Record<string, never>>;
+    Component?: ComponentType<Record<string, never>>;
+    render?: (context: ViewRenderContext) => void | (() => void);
+}
+
+export interface ViewRenderContext extends AllisletContextValue {
+    container: HTMLElement;
 }
 
 export const viewRegistryVersion = signal(0);
@@ -73,7 +80,11 @@ const builtInViews: RegisteredView[] = Object.entries(viewModules)
             Component,
         };
     })
-    .filter((view): view is RegisteredView => Boolean(view.Component))
+    .filter(
+        (view): view is typeof view & {
+            Component: ComponentType<Record<string, never>>;
+        } => Boolean(view.Component),
+    )
     .sort((a, b) => a.order - b.order);
 
 const customViews = new Map<string, RegisteredView>();
@@ -98,6 +109,7 @@ export function registerView(view: ViewDefinition): () => void {
         icon: view.icon || "⚡",
         order: view.order ?? 99,
         Component: view.Component,
+        render: view.render,
     });
     notifyViewRegistry();
     return () => unregisterView(view.id);

@@ -66,6 +66,7 @@
                     "macro-studio",
                     "storage-explorer",
                     "dom-inspector",
+                    "unpkg-custom-view",
                     "settings",
                     "sidebar",
                 ],
@@ -86,6 +87,74 @@
                 onMount: () => console.info("Allislet mounted from UNPKG"),
                 onCleanup: () => console.info("Allislet cleaned up"),
             }));
+
+            sdk.addView({
+                id: "unpkg-custom-view",
+                label: "Custom View",
+                icon: "✨",
+                order: 10,
+                render({ container, eventBus, storage }) {
+                    const panel = document.createElement("div");
+                    panel.innerHTML = `
+                        <style>
+                            .unpkg-custom-view {
+                                display: grid;
+                                gap: 12px;
+                                max-width: 420px;
+                                padding: 20px;
+                                border: 1px solid #2b2d31;
+                                border-radius: 10px;
+                                background: #18191c;
+                                color: #dbdee1;
+                                font: 14px/1.5 system-ui, sans-serif;
+                            }
+
+                            .unpkg-custom-view h2,
+                            .unpkg-custom-view p {
+                                margin: 0;
+                            }
+
+                            .unpkg-custom-view p {
+                                color: #b5bac1;
+                            }
+
+                            .unpkg-custom-view button {
+                                width: fit-content;
+                                padding: 8px 12px;
+                                border: 0;
+                                border-radius: 6px;
+                                background: #74c7ec;
+                                color: #111214;
+                                cursor: pointer;
+                                font: inherit;
+                                font-weight: 600;
+                            }
+                        </style>
+                        <div class="unpkg-custom-view">
+                            <h2>Native custom sidebar view</h2>
+                            <p>This tab is added with sdk.addView() and rendered with HTML, CSS, and JavaScript.</p>
+                            <button type="button">Save ready state</button>
+                            <output aria-live="polite">Ready</output>
+                        </div>
+                    `;
+
+                    const button = panel.querySelector("button");
+                    const output = panel.querySelector("output");
+                    const onClick = async () => {
+                        await storage.set("unpkg:custom-view-ready", true);
+                        eventBus.emit("unpkg:custom-view:ready");
+                        output.textContent = "Saved";
+                    };
+
+                    button.addEventListener("click", onClick);
+                    container.append(panel);
+
+                    return () => {
+                        button.removeEventListener("click", onClick);
+                        panel.remove();
+                    };
+                },
+            });
 
             await sdk.mount();
 

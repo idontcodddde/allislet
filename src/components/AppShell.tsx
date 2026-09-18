@@ -1,8 +1,13 @@
-import { useState, useMemo, useEffect } from "preact/hooks";
+import { useState, useMemo, useEffect, useRef } from "preact/hooks";
 import { useAllislet } from "../context/AllisletContext";
 import { useSignalValue } from "../hooks/useSignalValue";
 import { activeTabSignal, userThemeMode } from "../core/Signals";
-import { getRegisteredViews, registerViews, viewRegistryVersion } from "../views";
+import {
+    getRegisteredViews,
+    registerViews,
+    viewRegistryVersion,
+    type RegisteredView,
+} from "../views";
 import { Sidebar } from "./Sidebar";
 import { App as UserApp } from "../App";
 
@@ -165,8 +170,10 @@ export function AppShell() {
                             overflowY: "auto",
                         }}
                     >
-                        {isSidebarVisible ? (
-                            ActiveComponent ? <ActiveComponent /> : <UserApp />
+                        {isSidebarVisible && activeViewObj?.render ? (
+                            <NativeView view={activeViewObj} />
+                        ) : isSidebarVisible && ActiveComponent ? (
+                            <ActiveComponent />
                         ) : (
                             <UserApp />
                         )}
@@ -175,6 +182,27 @@ export function AppShell() {
             )}
         </div>
     );
+}
+
+function NativeView({ view }: { view: RegisteredView }) {
+    const { config, eventBus, pageExec, storage, antiDetect } = useAllislet();
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container || !view.render) return;
+
+        return view.render({
+            config,
+            eventBus,
+            pageExec,
+            storage,
+            antiDetect,
+            container,
+        });
+    }, [view, config, eventBus, pageExec, storage, antiDetect]);
+
+    return <div ref={containerRef} style={{ height: "100%" }} />;
 }
 
 const winControlBtnStyle = {

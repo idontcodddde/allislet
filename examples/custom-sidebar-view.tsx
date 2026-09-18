@@ -1,4 +1,3 @@
-import { h } from "preact";
 import { createAllislet, defineConfig } from "allislet";
 
 const sdk = createAllislet(defineConfig({
@@ -16,7 +15,12 @@ sdk.addView({
     label: "Status",
     icon: "✓",
     order: 1,
-    Component: () => h("div", null, "Custom tab registered at runtime"),
+    render({ container }) {
+        const status = document.createElement("div");
+        status.textContent = "Custom tab registered at runtime";
+        container.append(status);
+        return () => status.remove();
+    },
 });
 
 await sdk.mount();

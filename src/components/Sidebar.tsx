@@ -7,7 +7,7 @@ interface ViewItem {
     name?: string;
     label?: string;
     icon?: string;
-    Component: ComponentType<Record<string, never>>;
+    Component?: ComponentType<Record<string, never>>;
 }
 
 interface SidebarProps {
