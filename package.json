@@ -28,7 +28,7 @@
   "scripts": {
     "dev": "vite",
     "start": "bun run dev",
-    "build": "cmd /c \"node_modules\\.bin\\tsc.exe --noEmit && node_modules\\.bin\\vite.exe build && node_modules\\.bin\\vite.exe build --config vite.standalone.config.ts\"",
+    "build": "node scripts/build.mjs",
     "build:library": "bun run check-types && vite build",
     "build:standalone": "vite build --config vite.standalone.config.ts",
     "preview": "vite preview",
