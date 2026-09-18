@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Allislet complete UNPKG integration</title>
+    </head>
+    <body>
+        <script type="module">
+            const {
+                createAllislet,
+                defineConfig,
+                AdminStore,
+                AsyncQueue,
+                BearerExtractor,
+                Clipboard,
+                ConsoleRedirector,
+                CookieManager,
+                DeepLnk,
+                DOMFinder,
+                DOMObserver,
+                DOMUtils,
+                ElementPicker,
+                FileSystemAccess,
+                FormAutofill,
+                GlobalStorage,
+                Highlighter,
+                IndexedDBExplorer,
+                MacroRecorder,
+                MediaSniffer,
+                NetworkMock,
+                PageExecutor,
+                PageRouter,
+                PerfProfiler,
+                Sanitizer,
+                ScreenCapture,
+                ServiceWorkerRegistrar,
+                SocketIoBridge,
+                TabBroadcast,
+                URLState,
+                WorkerOffloader,
+                JSONExporter,
+                CSVExporter,
+                eventBus,
+                pageExec,
+                wsManager,
+            } = await import("https://unpkg.com/allislet@1.0.0/dist/standalone.js");
+
+            const sdk = createAllislet(defineConfig({
+                id: "allislet-unpkg-complete",
+                name: "Allislet UNPKG Complete",
+                version: "1.0.0",
+                theme: {
+                    mode: "dark",
+                    accentColor: "#74c7ec",
+                    defaultDockPosition: "right",
+                },
+                sidebar: {
+                    enabled: true,
+                    initiallyCollapsed: false,
+                },
+                activeTabs: [
+                    "network-logger",
+                    "websocket-manager",
+                    "js-console",
+                    "macro-studio",
+                    "storage-explorer",
+                    "dom-inspector",
+                    "unpkg-custom-view",
+                    "settings",
+                    "sidebar",
+                ],
+                features: {
+                    patchFetch: {
+                        onRequest: (url, init) =>
+                            eventBus.emit("example:fetch", { url, init }),
+                        onResponse: (url, response) =>
+                            eventBus.emit("example:response", {
+                                url,
+                                status: response.status,
+                            }),
+                    },
+                    patchXHR: true,
+                    interceptSockets: true,
+                    autoExtractBearer: true,
+                },
+                onMount: () => console.info("Allislet mounted from UNPKG"),
+                onCleanup: () => console.info("Allislet cleaned up"),
+            }));
+
+            sdk.addView({
+                id: "unpkg-custom-view",
+                label: "Custom View",
+                icon: "✨",
+                order: 10,
+                render({ container, eventBus, storage }) {
+                    const panel = document.createElement("div");
+                    panel.innerHTML = `
+                        <style>
+                            .unpkg-custom-view {
+                                display: grid;
+                                gap: 12px;
+                                max-width: 420px;
+                                padding: 20px;
+                                border: 1px solid #2b2d31;
+                                border-radius: 10px;
+                                background: #18191c;
+                                color: #dbdee1;
+                                font: 14px/1.5 system-ui, sans-serif;
+                            }
+
+                            .unpkg-custom-view h2,
+                            .unpkg-custom-view p {
+                                margin: 0;
+                            }
+
+                            .unpkg-custom-view p {
+                                color: #b5bac1;
+                            }
+
+                            .unpkg-custom-view button {
+                                width: fit-content;
+                                padding: 8px 12px;
+                                border: 0;
+                                border-radius: 6px;
+                                background: #74c7ec;
+                                color: #111214;
+                                cursor: pointer;
+                                font: inherit;
+                                font-weight: 600;
+                            }
+                        </style>
+                        <div class="unpkg-custom-view">
+                            <h2>Native custom sidebar view</h2>
+                            <p>This tab is added with sdk.addView() and rendered with HTML, CSS, and JavaScript.</p>
+                            <button type="button">Save ready state</button>
+                            <output aria-live="polite">Ready</output>
+                        </div>
+                    `;
+
+                    const button = panel.querySelector("button");
+                    const output = panel.querySelector("output");
+                    const onClick = async () => {
+                        await storage.set("unpkg:custom-view-ready", true);
+                        eventBus.emit("unpkg:custom-view:ready");
+                        output.textContent = "Saved";
+                    };
+
+                    button.addEventListener("click", onClick);
+                    container.append(panel);
+
+                    return () => {
+                        button.removeEventListener("click", onClick);
+                        panel.remove();
+                    };
+                },
+            });
+
+            await sdk.mount();
+
+            // Storage, events, and network mocking.
+            await sdk.getStorage().set("unpkg:ready", true);
+            NetworkMock.silent200("/api/demo", { ok: true });
+            eventBus.on("example:response", (payload) => console.info("response", payload));
+            BearerExtractor.enabled = true;
+
+            // WebSocket, DOM, macro, and page execution features.
+            wsManager.listen("ws:incoming", (frame) => console.debug("socket frame", frame));
+            const stopAttached = DOMObserver.onAttach("[data-allislet-demo]", console.info);
+            const recorder = new MacroRecorder();
+            recorder.start();
+            await pageExec.runInMainWorld("window.dispatchEvent(new Event('allislet-unpkg-ready'))");
+
+            // Core utility feature examples.
+            ConsoleRedirector.capture();
+            const queue = new AsyncQueue(10);
+            await queue.add(async () => "queued");
+            const profiler = new PerfProfiler();
+            profiler.start("unpkg-demo");
+            profiler.end("unpkg-demo");
+            const broadcast = new TabBroadcast("allislet-unpkg-demo");
+            broadcast.post("ready", { timestamp: Date.now() });
+            const deepLinkCleanup = DeepLnk.register("open", (params) => console.info(params));
+            const urlState = new URLState();
+            void urlState;
+            const router = new PageRouter();
+            void router;
+            const executor = new PageExecutor();
+            executor.run("return 1");
+            const sanitizer = new Sanitizer();
+            void sanitizer;
+            const finder = new DOMFinder();
+            void finder;
+            const utils = new DOMUtils();
+            void utils;
+            const picker = new ElementPicker();
+            void picker;
+            const highlighter = new Highlighter();
+            void highlighter;
+            const form = new FormAutofill();
+            void form;
+            const cookies = new CookieManager();
+            void cookies;
+            const screen = new ScreenCapture();
+            void screen;
+            const filesystem = new FileSystemAccess();
+            void filesystem;
+            const speech = new SpeechEngine();
+            void speech;
+            const media = new MediaSniffer();
+            void media;
+            const clipboard = new Clipboard();
+            void clipboard;
+            const indexedDB = IndexedDBExplorer.readDB;
+            void indexedDB;
+            const worker = WorkerOffloader.run;
+            void worker;
+            const serviceWorker = new ServiceWorkerRegistrar();
+            void serviceWorker;
+            const socketIO = new SocketIoBridge();
+            void socketIO;
+            const capture = new ScreenCapture();
+            void capture;
+            const admin = AdminStore.isAdmin;
+            void admin;
+            CSVExporter.download("unpkg-demo", [{ feature: "sdk", enabled: true }]);
+            JSONExporter.download("unpkg-demo", { mounted: true });
+
+            // Remove listeners/resources when the host application unloads.
+            globalThis.disposeAllisletUnpkgExample = () => {
+                recorder.stop();
+                stopAttached();
+                deepLinkCleanup();
+                broadcast.destroy();
+                ConsoleRedirector.release();
+                sdk.destroy();
+            };
+        </script>
+    </body>
+</html>

@@ -1,6 +1,7 @@
 import { AllisletSDK } from "./sdk";
 import { createAllislet } from "./index";
 import { defineConfig } from "./index";
+export * from "./index";
 
 declare global {
     interface Window {

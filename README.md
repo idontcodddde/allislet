@@ -106,6 +106,34 @@ await sdk.mount();
 The same `AllisletSDK` instance exposes storage, window controls, lifecycle
 teardown, and all exported network, DOM, automation, chat, and admin services.
 
+The built-in sidebar can be enabled, collapsed, and extended without changing
+the shell:
+
+```tsx
+import { h } from "preact";
+
+const sdk = createAllislet(defineConfig({
+  id: "custom-sidebar",
+  name: "Custom Sidebar",
+  version: "1.0.0",
+  sidebar: { enabled: true, initiallyCollapsed: false },
+  activeTabs: ["sidebar", "status"],
+}));
+
+sdk.addView({
+  id: "status",
+  label: "Status",
+  icon: "✓",
+  Component: () => h("p", null, "Connected"),
+});
+
+await sdk.mount();
+```
+
+Views can instead be supplied with `views` in the configuration. The sidebar
+toggle in the window header controls visibility at runtime, while each view's
+`order`, `label`, and `icon` control its tab presentation.
+
 ### Publishing to npm
 
 Allislet is configured for the public npm registry. Bun remains the package

@@ -3,6 +3,7 @@ import { AllisletSDK } from './sdk';
 export { AllisletSDK };
 export { mount, mountAllislet } from './main';
 export type { MountResult } from './main';
+export { getRegisteredViews, registerView, registerViews, unregisterView, type RegisteredView, type ViewDefinition, } from './views';
 export { HostReset, ShadowMount } from './core/ShadowMount';
 export type { AllisletEnvironment, AllisletRenderer, AllisletRuntimeContext, AllisletSDKOptions, } from './types/runtime';
 export declare function createAllislet(config: AllisletConfig, options?: import('./types/runtime').AllisletSDKOptions): import('./sdk').AllisletSDK;

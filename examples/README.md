@@ -26,6 +26,22 @@ const sdk = createAllislet(defineConfig({
 await sdk.mount();
 ```
 
+`unpkg-complete.html` is a browser-ready complete integration using:
+
+```ts
+const { createAllislet } = await import(
+  "https://unpkg.com/allislet@1.0.0/dist/standalone.js"
+);
+```
+
+It demonstrates configuration, the built-in collapsible sidebar, all built-in
+runtime services, network and WebSocket interception, storage, DOM automation,
+macro recording, page execution, admin/service-worker/socket bridges, exports,
+diagnostics, and teardown.
+
+`custom-sidebar-view.tsx` demonstrates adding a typed runtime view with
+`sdk.addView(...)`. You can also provide `views` in the configuration object.
+
 ```ts
 import { createAllislet, defineConfig } from "allislet";
 

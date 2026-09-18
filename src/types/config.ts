@@ -4,6 +4,12 @@ import type { FeaturesConfig, HotkeyRule } from "./features";
 import type { AvailableTab } from "./tabs";
 import type { OnMountContext } from "./lifecycle";
 import type { ExternalLibrary } from "./libs";
+import type { ViewDefinition } from "../views";
+
+export interface SidebarConfig {
+    enabled?: boolean;
+    initiallyCollapsed?: boolean;
+}
 
 export interface AllisletConfig {
     id: string;
@@ -15,7 +21,9 @@ export interface AllisletConfig {
     theme?: ThemeConfig;
     storage?: StorageConfig;
     features?: FeaturesConfig;
-    activeTabs?: AvailableTab[];
+    activeTabs?: readonly (AvailableTab | string)[];
+    views?: readonly ViewDefinition[];
+    sidebar?: SidebarConfig;
     hotkeys?: HotkeyRule[];
     onMount?: (ctx: OnMountContext) => void;
     onCleanup?: () => void;

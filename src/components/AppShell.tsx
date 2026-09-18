@@ -1,14 +1,28 @@
-import { useState, useMemo, useEffect } from "preact/hooks";
+import { useState, useMemo, useEffect, useRef } from "preact/hooks";
 import { useAllislet } from "../context/AllisletContext";
 import { useSignalValue } from "../hooks/useSignalValue";
 import { activeTabSignal, userThemeMode } from "../core/Signals";
-import { registeredViews } from "../views";
+import {
+    getRegisteredViews,
+    registerViews,
+    viewRegistryVersion,
+    type RegisteredView,
+} from "../views";
 import { Sidebar } from "./Sidebar";
 import { App as UserApp } from "../App";
 
 export function AppShell() {
     const { config } = useAllislet();
     const [isMinimized, setIsMinimized] = useState(false);
+    const [isSidebarVisible, setIsSidebarVisible] = useState(
+        config.sidebar?.enabled ?? config.activeTabs?.includes("sidebar") ?? true,
+    );
+    useSignalValue(viewRegistryVersion);
+
+    useEffect(() => {
+        const removeConfiguredViews = config.views ? registerViews(config.views) : () => {};
+        return removeConfiguredViews;
+    }, [config.views]);
 
     const currentTab = useSignalValue(activeTabSignal);
     const currentTheme = useSignalValue(userThemeMode);
@@ -16,17 +30,14 @@ export function AppShell() {
 
     const enabledViews = useMemo(() => {
         if (!config.activeTabs || config.activeTabs.length === 0) {
-            return registeredViews;
+            return getRegisteredViews();
         }
+        const views = getRegisteredViews();
         const matched = config.activeTabs
-            .map((id) => registeredViews.find((v) => v.id === id))
-            .filter((v): v is typeof registeredViews[number] => Boolean(v));
+        .map((id) => views.find((v) => v.id === id))
+        .filter((v): v is typeof views[number] => Boolean(v));
 
-        return matched.length > 0 ? matched : registeredViews;
-    }, [config.activeTabs]);
-
-    const showSidebar = useMemo(() => {
-        return Boolean(config.activeTabs?.includes("sidebar"));
+        return matched.length > 0 ? matched : views;
     }, [config.activeTabs]);
 
     useEffect(() => {
@@ -101,6 +112,13 @@ export function AppShell() {
                 {/* Window Controls */}
                 <div style={{ display: "flex", gap: "6px" }}>
                     <button
+                        onClick={() => setIsSidebarVisible((visible) => !visible)}
+                        style={winControlBtnStyle}
+                        title={isSidebarVisible ? "Hide sidebar" : "Show sidebar"}
+                    >
+                        ☰
+                    </button>
+                    <button
                         onClick={() => setIsMinimized(!isMinimized)}
                         style={winControlBtnStyle}
                         title="Minimize"
@@ -129,14 +147,16 @@ export function AppShell() {
             {/* Main Container */}
             {!isMinimized && (
                 <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-                    {showSidebar && (
+                    {isSidebarVisible && (
                         <Sidebar
-                            views={enabledViews}
+                            views={[...enabledViews]}
                             activeTab={activeViewObj?.id || ""}
                             onSelectTab={(tabId) => {
                                 activeTabSignal.value = tabId;
                             }}
                             accentColor={accentColor}
+                            initiallyCollapsed={config.sidebar?.initiallyCollapsed}
+                            onToggle={() => undefined}
                         />
                     )}
 
@@ -150,8 +170,10 @@ export function AppShell() {
                             overflowY: "auto",
                         }}
                     >
-                        {showSidebar ? (
-                            ActiveComponent ? <ActiveComponent /> : <UserApp />
+                        {isSidebarVisible && activeViewObj?.render ? (
+                            <NativeView view={activeViewObj} />
+                        ) : isSidebarVisible && ActiveComponent ? (
+                            <ActiveComponent />
                         ) : (
                             <UserApp />
                         )}
@@ -160,6 +182,27 @@ export function AppShell() {
             )}
         </div>
     );
+}
+
+function NativeView({ view }: { view: RegisteredView }) {
+    const { config, eventBus, pageExec, storage, antiDetect } = useAllislet();
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container || !view.render) return;
+
+        return view.render({
+            config,
+            eventBus,
+            pageExec,
+            storage,
+            antiDetect,
+            container,
+        });
+    }, [view, config, eventBus, pageExec, storage, antiDetect]);
+
+    return <div ref={containerRef} style={{ height: "100%" }} />;
 }
 
 const winControlBtnStyle = {

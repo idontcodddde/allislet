@@ -11,6 +11,8 @@ interface SidebarProps {
     activeTab: string;
     onSelectTab: (id: string) => void;
     accentColor: string;
+    initiallyCollapsed?: boolean;
+    onToggle?: () => void;
 }
-export declare function Sidebar({ views, activeTab, onSelectTab, accentColor }: SidebarProps): import("preact").JSX.Element;
+export declare function Sidebar({ views, activeTab, onSelectTab, accentColor, initiallyCollapsed, onToggle }: SidebarProps): import("preact").JSX.Element;
 export {};
