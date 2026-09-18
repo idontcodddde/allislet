@@ -5,6 +5,11 @@ import { storage, type GlobalStorage } from "./core/GlobalStorage";
 import { windowManager } from "./core/WindowManager";
 import { destroyNetworkEngine } from "./core/Engine";
 import type { AllisletSDKOptions } from "./types/runtime";
+import {
+    registerView,
+    unregisterView,
+    type ViewDefinition,
+} from "./views";
 
 export class AllisletSDK {
     public readonly config: AllisletConfig;
@@ -59,5 +64,21 @@ export class AllisletSDK {
 
     public getStorage(): GlobalStorage {
         return this.options.services?.storage || storage;
+    }
+
+    public addView(view: ViewDefinition): () => void {
+        return registerView(view);
+    }
+
+    public registerView(view: ViewDefinition): () => void {
+        return this.addView(view);
+    }
+
+    public removeView(id: string): boolean {
+        return unregisterView(id);
+    }
+
+    public unregisterView(id: string): boolean {
+        return this.removeView(id);
     }
 }

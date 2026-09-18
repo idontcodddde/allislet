@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Allislet complete UNPKG integration</title>
+    </head>
+    <body>
+        <script type="module">
+            const {
+                createAllislet,
+                defineConfig,
+                AdminStore,
+                AsyncQueue,
+                BearerExtractor,
+                Clipboard,
+                ConsoleRedirector,
+                CookieManager,
+                DeepLnk,
+                DOMFinder,
+                DOMObserver,
+                DOMUtils,
+                ElementPicker,
+                FileSystemAccess,
+                FormAutofill,
+                GlobalStorage,
+                Highlighter,
+                IndexedDBExplorer,
+                MacroRecorder,
+                MediaSniffer,
+                NetworkMock,
+                PageExecutor,
+                PageRouter,
+                PerfProfiler,
+                Sanitizer,
+                ScreenCapture,
+                ServiceWorkerRegistrar,
+                SocketIoBridge,
+                TabBroadcast,
+                URLState,
+                WorkerOffloader,
+                JSONExporter,
+                CSVExporter,
+                eventBus,
+                pageExec,
+                wsManager,
+            } = await import("https://unpkg.com/allislet@1.0.0/dist/standalone.js");
+
+            const sdk = createAllislet(defineConfig({
+                id: "allislet-unpkg-complete",
+                name: "Allislet UNPKG Complete",
+                version: "1.0.0",
+                theme: {
+                    mode: "dark",
+                    accentColor: "#74c7ec",
+                    defaultDockPosition: "right",
+                },
+                sidebar: {
+                    enabled: true,
+                    initiallyCollapsed: false,
+                },
+                activeTabs: [
+                    "network-logger",
+                    "websocket-manager",
+                    "js-console",
+                    "macro-studio",
+                    "storage-explorer",
+                    "dom-inspector",
+                    "settings",
+                    "sidebar",
+                ],
+                features: {
+                    patchFetch: {
+                        onRequest: (url, init) =>
+                            eventBus.emit("example:fetch", { url, init }),
+                        onResponse: (url, response) =>
+                            eventBus.emit("example:response", {
+                                url,
+                                status: response.status,
+                            }),
+                    },
+                    patchXHR: true,
+                    interceptSockets: true,
+                    autoExtractBearer: true,
+                },
+                onMount: () => console.info("Allislet mounted from UNPKG"),
+                onCleanup: () => console.info("Allislet cleaned up"),
+            }));
+
+            await sdk.mount();
+
+            // Storage, events, and network mocking.
+            await sdk.getStorage().set("unpkg:ready", true);
+            NetworkMock.silent200("/api/demo", { ok: true });
+            eventBus.on("example:response", (payload) => console.info("response", payload));
+            BearerExtractor.enabled = true;
+
+            // WebSocket, DOM, macro, and page execution features.
+            wsManager.listen("ws:incoming", (frame) => console.debug("socket frame", frame));
+            const stopAttached = DOMObserver.onAttach("[data-allislet-demo]", console.info);
+            const recorder = new MacroRecorder();
+            recorder.start();
+            await pageExec.runInMainWorld("window.dispatchEvent(new Event('allislet-unpkg-ready'))");
+
+            // Core utility feature examples.
+            ConsoleRedirector.capture();
+            const queue = new AsyncQueue(10);
+            await queue.add(async () => "queued");
+            const profiler = new PerfProfiler();
+            profiler.start("unpkg-demo");
+            profiler.end("unpkg-demo");
+            const broadcast = new TabBroadcast("allislet-unpkg-demo");
+            broadcast.post("ready", { timestamp: Date.now() });
+            const deepLinkCleanup = DeepLnk.register("open", (params) => console.info(params));
+            const urlState = new URLState();
+            void urlState;
+            const router = new PageRouter();
+            void router;
+            const executor = new PageExecutor();
+            executor.run("return 1");
+            const sanitizer = new Sanitizer();
+            void sanitizer;
+            const finder = new DOMFinder();
+            void finder;
+            const utils = new DOMUtils();
+            void utils;
+            const picker = new ElementPicker();
+            void picker;
+            const highlighter = new Highlighter();
+            void highlighter;
+            const form = new FormAutofill();
+            void form;
+            const cookies = new CookieManager();
+            void cookies;
+            const screen = new ScreenCapture();
+            void screen;
+            const filesystem = new FileSystemAccess();
+            void filesystem;
+            const speech = new SpeechEngine();
+            void speech;
+            const media = new MediaSniffer();
+            void media;
+            const clipboard = new Clipboard();
+            void clipboard;
+            const indexedDB = IndexedDBExplorer.readDB;
+            void indexedDB;
+            const worker = WorkerOffloader.run;
+            void worker;
+            const serviceWorker = new ServiceWorkerRegistrar();
+            void serviceWorker;
+            const socketIO = new SocketIoBridge();
+            void socketIO;
+            const capture = new ScreenCapture();
+            void capture;
+            const admin = AdminStore.isAdmin;
+            void admin;
+            CSVExporter.download("unpkg-demo", [{ feature: "sdk", enabled: true }]);
+            JSONExporter.download("unpkg-demo", { mounted: true });
+
+            // Remove listeners/resources when the host application unloads.
+            globalThis.disposeAllisletUnpkgExample = () => {
+                recorder.stop();
+                stopAttached();
+                deepLinkCleanup();
+                broadcast.destroy();
+                ConsoleRedirector.release();
+                sdk.destroy();
+            };
+        </script>
+    </body>
+</html>

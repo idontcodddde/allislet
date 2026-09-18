@@ -1,0 +1,22 @@
+import { h } from "preact";
+import { createAllislet, defineConfig } from "allislet";
+
+const sdk = createAllislet(defineConfig({
+    id: "custom-sidebar-view",
+    name: "Custom Sidebar View",
+    version: "1.0.0",
+    sidebar: { enabled: true },
+    activeTabs: ["sidebar", "custom-status"],
+}), {
+    builtInUI: true,
+});
+
+sdk.addView({
+    id: "custom-status",
+    label: "Status",
+    icon: "✓",
+    order: 1,
+    Component: () => h("div", null, "Custom tab registered at runtime"),
+});
+
+await sdk.mount();

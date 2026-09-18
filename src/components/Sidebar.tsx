@@ -15,10 +15,17 @@ interface SidebarProps {
     activeTab: string;
     onSelectTab: (id: string) => void;
     accentColor: string;
+    initiallyCollapsed?: boolean;
+    onToggle?: () => void;
 }
 
-export function Sidebar({ views, activeTab, onSelectTab, accentColor }: SidebarProps) {
-    const [isCollapsed, setIsCollapsed] = useState(false);
+export function Sidebar({ views, activeTab, onSelectTab, accentColor, initiallyCollapsed = false, onToggle }: SidebarProps) {
+    const [isCollapsed, setIsCollapsed] = useState(initiallyCollapsed);
+
+    const toggleCollapsed = () => {
+        setIsCollapsed((collapsed) => !collapsed);
+        onToggle?.();
+    };
 
     return (
         <div
@@ -94,7 +101,7 @@ export function Sidebar({ views, activeTab, onSelectTab, accentColor }: SidebarP
             {/* Collapse Toggle Button */}
             <div style={{ padding: "0 8px", borderTop: "1px solid #2b2d31", paddingTop: "8px" }}>
                 <button
-                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    onClick={toggleCollapsed}
                     style={{
                         display: "flex",
                         alignItems: "center",
