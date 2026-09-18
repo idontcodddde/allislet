@@ -1,6 +1,6 @@
 # Allislet
 
-Allislet is a high-performance browser SDK for building shadow-isolated bookmarklets and injected applications using Preact, TypeScript, and Bun. It is designed for host-safe overlays, DOM automation, network interception, remote tooling, and app-shell infrastructure that can run inside arbitrary websites without destabilizing the page.
+Allislet is a high-performance browser SDK for building shadow-isolated bookmarklets and injected applications using Preact, TypeScript, and Bun. It is designed for host-safe overlays, DOM automation, network interception, and app-shell infrastructure that can run inside arbitrary websites without destabilizing the page.
 
 ## Project status
 
@@ -18,7 +18,7 @@ Allislet is not just a launcher or a tiny bookmarklet helper. It is a runtime fr
 - intercept fetch, XHR, and socket traffic
 - observe and automate DOM interactions
 - manage floating windows, panels, modals, and docking layouts
-- coordinate live chat, admin, and remote execution workflows
+- coordinate live chat and admin moderation workflows
 - load external libraries and runtime data through config-driven bootstrapping
 
 ## Why it exists
@@ -43,7 +43,7 @@ Allislet is organized into layered runtime stages:
 - DOM automation: observers, form automation, element picking, highlighting, macro recording
 - UI shell: docking, windows, modals, command registry, toasts, error boundaries
 - Data and browser utilities: URL binding, exports, capture tools, file access, worker execution, indexing, performance tracing
-- Built-in tabs: chat, DM, admin, and remote execution surfaces
+- Built-in tabs: chat, DM, admin, and local execution surfaces
 
 The runtime begins in src/main.tsx, where the host bootstrap mounts the app into a Shadow Root and renders the top-level Preact shell under an Allislet provider context.
 
@@ -245,7 +245,8 @@ export default defineConfig({
 - username persistence
 - public room and direct-message flows
 - admin gating with runtime permission checks
-- remote execution across connected clients
+
+The admin console does not provide remote script execution. Admin permissions are limited to chat moderation, such as muting users.
 
 ## Documentation map
 
@@ -288,6 +289,20 @@ bun install
 bun run dev
 bun run build
 ```
+
+Run the regression tests:
+
+```bash
+bun run test
+```
+
+## Responsibility and acceptable use
+
+Allislet is provided for legitimate development, testing, and automation. You are
+responsible for the code and content you create or run with it, and for complying
+with applicable laws, service terms, and permissions. The maintainers are not
+responsible for misuse, damage, or outcomes resulting from creations or actions
+made with Allislet.
 
 ## License
 
