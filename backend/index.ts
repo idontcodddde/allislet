@@ -162,32 +162,6 @@ const server = Bun.serve<ClientData>({
                         break;
                     }
 
-                    case "admin:exec_code": {
-                        if (!ws.data.isAdmin) {
-                            console.warn(
-                                `[Security Alert] Non-admin ${ws.data.username} attempted code execution!`,
-                            );
-                            return;
-                        }
-
-                        const { code, targetUser } = data;
-                        console.log(
-                            `[Admin Exec] ${ws.data.username} sent code payload to target: ${targetUser}`,
-                        );
-
-                        for (const clientWs of clients) {
-                            if (
-                                targetUser === "*" ||
-                                clientWs.data.username === targetUser
-                            ) {
-                                sendToClient(clientWs, "admin:remote_execute", {
-                                    code,
-                                });
-                            }
-                        }
-                        break;
-                    }
-
                     case "admin:mute_user": {
                         if (!ws.data.isAdmin) {
                             console.warn(
