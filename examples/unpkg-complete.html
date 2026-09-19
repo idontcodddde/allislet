@@ -41,59 +41,74 @@
                 WorkerOffloader,
                 JSONExporter,
                 CSVExporter,
+                stateRegistry,
                 eventBus,
                 pageExec,
                 wsManager,
-            } = await import("https://unpkg.com/allislet@1.0.0/dist/standalone.js");
+            } =
+                await import("https://unpkg.com/allislet@1.0.2/dist/standalone.js");
 
-            const sdk = createAllislet(defineConfig({
-                id: "allislet-unpkg-complete",
-                name: "Allislet UNPKG Complete",
-                version: "1.0.0",
-                theme: {
-                    mode: "dark",
-                    accentColor: "#74c7ec",
-                    defaultDockPosition: "right",
-                },
-                sidebar: {
-                    enabled: true,
-                    initiallyCollapsed: false,
-                },
-                activeTabs: [
-                    "network-logger",
-                    "websocket-manager",
-                    "js-console",
-                    "macro-studio",
-                    "storage-explorer",
-                    "dom-inspector",
-                    "unpkg-custom-view",
-                    "settings",
-                    "sidebar",
-                ],
-                features: {
-                    patchFetch: {
-                        onRequest: (url, init) =>
-                            eventBus.emit("example:fetch", { url, init }),
-                        onResponse: (url, response) =>
-                            eventBus.emit("example:response", {
-                                url,
-                                status: response.status,
-                            }),
+            const customViewReady = stateRegistry.register(
+                "unpkg:custom-view-ready",
+                false
+            );
+            const unpkgReady = stateRegistry.register("unpkg:ready", false);
+
+            const sdk = createAllislet(
+                defineConfig({
+                    id: "allislet-unpkg-complete",
+                    name: "Allislet UNPKG Complete",
+                    version: "1.0.0",
+                    storage: {
+                        crossDomainHubUrl:
+                            "http://127.0.0.1:3000/examples/storage.html",
+                        encryptLocalStorage: true,
                     },
-                    patchXHR: true,
-                    interceptSockets: true,
-                    autoExtractBearer: true,
-                },
-                onMount: () => console.info("Allislet mounted from UNPKG"),
-                onCleanup: () => console.info("Allislet cleaned up"),
-            }));
+                    theme: {
+                        mode: "dark",
+                        accentColor: "#74c7ec",
+                        defaultDockPosition: "center",
+                    },
+                    sidebar: {
+                        enabled: true,
+                        initiallyCollapsed: false,
+                    },
+                    activeTabs: [
+                        "network-logger",
+                        "websocket-manager",
+                        "js-console",
+                        "macro-studio",
+                        "storage-explorer",
+                        "dom-inspector",
+                        "unpkg-custom-view",
+                        "settings",
+                        "sidebar",
+                    ],
+                    features: {
+                        patchFetch: {
+                            onRequest: (url, init) =>
+                                eventBus.emit("example:fetch", { url, init }),
+                            onResponse: (url, response) =>
+                                eventBus.emit("example:response", {
+                                    url,
+                                    status: response.status,
+                                }),
+                        },
+                        patchXHR: true,
+                        interceptSockets: true,
+                        autoExtractBearer: true,
+                    },
+                    onMount: () => console.info("Allislet mounted from UNPKG"),
+                    onCleanup: () => console.info("Allislet cleaned up"),
+                })
+            );
 
             sdk.addView({
                 id: "unpkg-custom-view",
                 label: "Custom View",
-                icon: "✨",
+                icon: "mdi:star",
                 order: 10,
-                render({ container, eventBus, storage }) {
+                render({ container, eventBus }) {
                     const panel = document.createElement("div");
                     panel.innerHTML = `
                         <style>
@@ -140,17 +155,26 @@
 
                     const button = panel.querySelector("button");
                     const output = panel.querySelector("output");
-                    const onClick = async () => {
-                        await storage.set("unpkg:custom-view-ready", true);
-                        eventBus.emit("unpkg:custom-view:ready");
-                        output.textContent = "Saved";
+                    const updateReadyState = (ready) => {
+                        button.textContent = ready
+                            ? "Ready"
+                            : "Save ready state";
+                        output.textContent = ready ? "Ready" : "Not ready";
                     };
+                    const onClick = () => {
+                        customViewReady.value = !customViewReady.value;
+                        eventBus.emit("unpkg:custom-view:ready");
+                    };
+                    const unsubscribe =
+                        customViewReady.subscribe(updateReadyState);
 
                     button.addEventListener("click", onClick);
                     container.append(panel);
+                    updateReadyState(customViewReady.value);
 
                     return () => {
                         button.removeEventListener("click", onClick);
+                        unsubscribe();
                         panel.remove();
                     };
                 },
@@ -158,18 +182,27 @@
 
             await sdk.mount();
 
-            // Storage, events, and network mocking.
-            await sdk.getStorage().set("unpkg:ready", true);
+            // State, events, and network mocking.
+            unpkgReady.value = true;
             NetworkMock.silent200("/api/demo", { ok: true });
-            eventBus.on("example:response", (payload) => console.info("response", payload));
+            eventBus.on("example:response", (payload) =>
+                console.info("response", payload)
+            );
             BearerExtractor.enabled = true;
 
             // WebSocket, DOM, macro, and page execution features.
-            wsManager.listen("ws:incoming", (frame) => console.debug("socket frame", frame));
-            const stopAttached = DOMObserver.onAttach("[data-allislet-demo]", console.info);
+            wsManager.listen("ws:incoming", (frame) =>
+                console.debug("socket frame", frame)
+            );
+            const stopAttached = DOMObserver.onAttach(
+                "[data-allislet-demo]",
+                console.info
+            );
             const recorder = new MacroRecorder();
             recorder.start();
-            await pageExec.runInMainWorld("window.dispatchEvent(new Event('allislet-unpkg-ready'))");
+            await pageExec.runInMainWorld(
+                "window.dispatchEvent(new Event('allislet-unpkg-ready'))"
+            );
 
             // Core utility feature examples.
             ConsoleRedirector.capture();
@@ -180,7 +213,9 @@
             profiler.end("unpkg-demo");
             const broadcast = new TabBroadcast("allislet-unpkg-demo");
             broadcast.post("ready", { timestamp: Date.now() });
-            const deepLinkCleanup = DeepLnk.register("open", (params) => console.info(params));
+            const deepLinkCleanup = DeepLnk.register("open", (params) =>
+                console.info(params)
+            );
             const urlState = new URLState();
             void urlState;
             const router = new PageRouter();
@@ -223,7 +258,9 @@
             void capture;
             const admin = AdminStore.isAdmin;
             void admin;
-            CSVExporter.download("unpkg-demo", [{ feature: "sdk", enabled: true }]);
+            CSVExporter.download("unpkg-demo", [
+                { feature: "sdk", enabled: true },
+            ]);
             JSONExporter.download("unpkg-demo", { mounted: true });
 
             // Remove listeners/resources when the host application unloads.

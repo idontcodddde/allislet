@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+  <head>
+    <script>
+      window.addEventListener("message", (event) => {
+        const data = event.data || {};
+        const { id, type, action, key, value, namespace, encrypt } = data;
+
+        const command =
+          action ||
+          (type ? type.replace("ALLISLET_STORAGE_", "").toLowerCase() : null);
+        if (!command) return;
+
+        const storeKey =
+          namespace && key && !key.startsWith(namespace + ":")
+            ? `${namespace}:${key}`
+            : key || "";
+
+        try {
+          if (command === "get") {
+            const raw = localStorage.getItem(storeKey);
+            let parsed = null;
+
+            if (raw !== null && raw !== undefined) {
+              try {
+                parsed = encrypt
+                  ? JSON.parse(decodeURIComponent(atob(raw)))
+                  : JSON.parse(raw);
+              } catch {
+                parsed = raw;
+              }
+            }
+
+            event.source.postMessage(
+              { id, success: true, result: parsed, value: parsed },
+              event.origin,
+            );
+          } else if (command === "set") {
+            const val = encrypt
+              ? btoa(encodeURIComponent(JSON.stringify(value)))
+              : JSON.stringify(value);
+            localStorage.setItem(storeKey, val);
+
+            event.source.postMessage(
+              { id, success: true, result: true },
+              event.origin,
+            );
+          } else if (command === "remove") {
+            localStorage.removeItem(storeKey);
+
+            event.source.postMessage(
+              { id, success: true, result: true },
+              event.origin,
+            );
+          } else if (command === "clear") {
+            localStorage.clear();
+
+            event.source.postMessage(
+              { id, success: true, result: true },
+              event.origin,
+            );
+          }
+        } catch (err) {
+          event.source.postMessage(
+            { id, success: false, error: err.message },
+            event.origin,
+          );
+        }
+      });
+    </script>
+  </head>
+  <body></body>
+</html>
